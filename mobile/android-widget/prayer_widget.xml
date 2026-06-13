@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="12dp"
+    android:background="@drawable/widget_background">
+
+    <!-- Mosque Header -->
+    <TextView
+        android:id="@+id/widget_mosque_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Masjid Al-Falah"
+        android:textColor="#ffffff"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:ellipsize="end"
+        android:maxLines="1" />
+
+    <!-- Indicator badge -->
+    <TextView
+        android:id="@+id/widget_next_prayer_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Maghrib Salah"
+        android:textColor="#fbbf24"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:layout_below="@id/widget_mosque_name"
+        android:layout_alignParentLeft="true"
+        android:layout_marginTop="4dp" />
+
+    <!-- Live Timer Countdown -->
+    <TextView
+        android:id="@+id/widget_countdown_timer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:14:25"
+        android:textColor="#ffffff"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:layout_centerVertical="true"
+        android:layout_alignParentLeft="true" />
+
+    <!-- Scheduled Salah Time -->
+    <TextView
+        android:id="@+id/widget_prayer_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="18:27"
+        android:textColor="#a7f3d0"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Masjid Connect"
+        android:textColor="#ffffff"
+        android:alpha="0.5"
+        android:textSize="8sp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true" />
+
+</RelativeLayout>
