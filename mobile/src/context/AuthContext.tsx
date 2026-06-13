@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Base API URL (pointing to localhost or production domain)
 // For local development on emulator, use your machine IP instead of localhost.
 // We'll define a fallback and let it be configured.
-export const API_URL = 'https://masjid-connect-web.vercel.app'; // Change to user's deployment URL in production
+export const API_URL = 'https://prayer-time-app-ten.vercel.app'; // Change to user's deployment URL in production
 
 interface UserProfile {
   id: string;
