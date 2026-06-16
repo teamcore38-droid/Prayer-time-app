@@ -37,7 +37,7 @@ interface Mosque {
 
 export default function HomeDashboard() {
   const router = useRouter();
-  const { followedMosqueId, apiUrl } = useAuth();
+  const { followedMosqueId, apiUrl, isAuthenticated, user } = useAuth();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
 
@@ -208,6 +208,19 @@ export default function HomeDashboard() {
               {error || 'No timetable records found for today. Admin update required.'}
             </Text>
           </View>
+        )}
+
+        {/* Admin Edit Button */}
+        {isAuthenticated && (user?.role === 'mosque_admin' || user?.role === 'super_admin') && (
+          <TouchableOpacity 
+            style={[styles.adminEditCard, { borderColor: colors.primary }]}
+            onPress={() => router.push('/edit-prayers')}
+          >
+            <Sparkles size={16} color={colors.primary} />
+            <Text style={[styles.adminEditText, { color: colors.primary }]}>
+              Imam Console: Edit Times
+            </Text>
+          </TouchableOpacity>
         )}
 
         {/* Timetable Section */}
@@ -502,5 +515,20 @@ const styles = StyleSheet.create({
   },
   jumuahLabel: {
     fontSize: 11,
+  },
+  adminEditCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    marginTop: 4,
+  },
+  adminEditText: {
+    fontSize: 13,
+    fontWeight: '700',
   }
 });

@@ -13,7 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Settings, MapPin, Bell, User, LogOut, Search, CheckCircle } from 'lucide-react-native';
+import { Settings, MapPin, Bell, User, LogOut, Search, CheckCircle, ChevronRight } from 'lucide-react-native';
 
 interface Mosque {
   _id: string;
@@ -101,10 +101,7 @@ export default function SettingsScreen() {
     }
   };
 
-  const filteredMosques = mosques.filter(m => 
-    m.mosqueName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    m.city.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const followedMosque = mosques.find(m => m._id === followedMosqueId);
 
   const colors = {
     bg: isDark ? '#090f0d' : '#f4f7f6',
@@ -126,56 +123,28 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Section 1: Mosque Selector */}
         <View style={[styles.section, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Followed Mosque</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Mosque</Text>
           <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-            Choose your local mosque to receive live timetables and push notifications.
+            Your application is connected to your local congregation.
           </Text>
 
-          {/* Search bar */}
-          <View style={[styles.searchBox, { backgroundColor: colors.inputBg }]}>
-            <Search size={16} color={colors.textSecondary} />
-            <TextInput
-              placeholder="Search by mosque name or city..."
-              placeholderTextColor={colors.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              style={[styles.input, { color: colors.text }]}
-            />
-          </View>
-
-          {/* Mosque List items */}
-          <View style={styles.list}>
-            {filteredMosques.map((item) => {
-              const isFollowed = followedMosqueId === item._id;
-              return (
-                <TouchableOpacity
-                  key={item._id}
-                  onPress={() => handleSelectMosque(item._id)}
-                  style={[styles.mosqueItem, { borderBottomColor: colors.border }]}
-                >
-                  <View style={styles.mosqueItemLeft}>
-                    <MapPin size={14} color={isFollowed ? colors.primary : colors.textSecondary} />
-                    <View>
-                      <Text style={[styles.mosqueItemName, { color: colors.text }]}>
-                        {item.mosqueName}
-                      </Text>
-                      <Text style={[styles.mosqueItemCity, { color: colors.textSecondary }]}>
-                        {item.city}, {item.district}
-                      </Text>
-                    </View>
-                  </View>
-                  {isFollowed && (
-                    <CheckCircle size={16} color={colors.primary} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-            {filteredMosques.length === 0 && (
-              <Text style={[styles.noResults, { color: colors.textSecondary }]}>
-                No mosques matching search query.
-              </Text>
-            )}
-          </View>
+          {followedMosque ? (
+            <View style={[styles.followedCard, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+              <MapPin size={24} color={colors.primary} style={styles.followedIcon} />
+              <View style={styles.followedDetails}>
+                <Text style={[styles.followedName, { color: colors.text }]}>
+                  {followedMosque.mosqueName}
+                </Text>
+                <Text style={[styles.followedLocation, { color: colors.textSecondary }]}>
+                  {followedMosque.city}, {followedMosque.district}
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+              Loading mosque details...
+            </Text>
+          )}
         </View>
 
         {/* Section 2: Notifications */}
@@ -242,23 +211,44 @@ export default function SettingsScreen() {
           </View>
 
           {isAuthenticated && user ? (
-            <View style={styles.profileBox}>
-              <View style={styles.profileDetails}>
-                <Text style={[styles.profileName, { color: colors.text }]}>{user.name}</Text>
-                <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>{user.email}</Text>
-                <View style={[styles.profileBadge, { backgroundColor: colors.primary + '15' }]}>
-                  <Text style={[styles.profileBadgeText, { color: colors.primary }]}>
-                    {user.role.replace('_', ' ').toUpperCase()}
-                  </Text>
+            <View style={styles.profileBoxVertical}>
+              <View style={styles.profileBox}>
+                <View style={styles.profileDetails}>
+                  <Text style={[styles.profileName, { color: colors.text }]}>{user.name}</Text>
+                  <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>{user.email}</Text>
+                  <View style={[styles.profileBadge, { backgroundColor: colors.primary + '15' }]}>
+                    <Text style={[styles.profileBadgeText, { color: colors.primary }]}>
+                      {user.role.replace('_', ' ').toUpperCase()}
+                    </Text>
+                  </View>
                 </View>
               </View>
-              <TouchableOpacity
-                onPress={logout}
-                style={[styles.btnOutline, { borderColor: '#f43f5e' }]}
-              >
-                <LogOut size={14} color="#f43f5e" />
-                <Text style={styles.btnOutlineText}>Log Out</Text>
-              </TouchableOpacity>
+
+              <View style={styles.adminActionList}>
+                {(user.role === 'mosque_admin' || user.role === 'super_admin') && (
+                  <TouchableOpacity
+                    onPress={() => router.push('/edit-prayers')}
+                    style={[styles.adminActionItem, { borderBottomColor: colors.border }]}
+                  >
+                    <View style={styles.adminActionLeft}>
+                      <Settings size={16} color={colors.primary} />
+                      <Text style={[styles.adminActionText, { color: colors.text }]}>Imam Console: Edit Times</Text>
+                    </View>
+                    <ChevronRight size={16} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                )}
+
+                <TouchableOpacity
+                  onPress={logout}
+                  style={styles.adminActionItem}
+                >
+                  <View style={styles.adminActionLeft}>
+                    <LogOut size={16} color="#f43f5e" />
+                    <Text style={[styles.adminActionText, { color: '#f43f5e', fontWeight: '700' }]}>Log Out</Text>
+                  </View>
+                  <ChevronRight size={16} color="#f43f5e" />
+                </TouchableOpacity>
+              </View>
             </View>
           ) : (
             <View style={styles.loginCTA}>
@@ -438,5 +428,56 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '700',
+  },
+  followedCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  followedIcon: {
+    alignSelf: 'center',
+  },
+  followedDetails: {
+    flex: 1,
+    gap: 2,
+  },
+  followedName: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  followedLocation: {
+    fontSize: 11,
+  },
+  loadingText: {
+    fontSize: 12,
+    textAlign: 'center',
+    paddingVertical: 8,
+  },
+  profileBoxVertical: {
+    gap: 12,
+  },
+  adminActionList: {
+    marginTop: 8,
+  },
+  adminActionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'transparent',
+  },
+  adminActionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  adminActionText: {
+    fontSize: 13,
+    fontWeight: '600',
   }
 });

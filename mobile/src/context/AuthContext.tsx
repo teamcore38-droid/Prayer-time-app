@@ -41,8 +41,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedUser = await AsyncStorage.getItem('user');
         const storedMosqueId = await AsyncStorage.getItem('followedMosqueId');
 
-        if (storedMosqueId) {
-          setFollowedMosqueId(storedMosqueId);
+        let currentMosqueId = storedMosqueId;
+
+        // Auto-select default mosque if none is followed
+        if (!currentMosqueId) {
+          try {
+            const res = await fetch(`${API_URL}/api/mosques`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.length > 0) {
+                currentMosqueId = data[0]._id;
+                setFollowedMosqueId(currentMosqueId);
+                if (currentMosqueId) {
+                  await AsyncStorage.setItem('followedMosqueId', currentMosqueId);
+                }
+              }
+            }
+          } catch (err) {
+            console.log('Failed to fetch default mosque during bootstrap', err);
+          }
+        } else {
+          setFollowedMosqueId(currentMosqueId);
         }
 
         if (storedToken && storedUser) {
