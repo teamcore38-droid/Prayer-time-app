@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -6,9 +6,12 @@ import {
   FlatList, 
   SafeAreaView, 
   useColorScheme,
-  TouchableOpacity
+  TouchableOpacity,
+  RefreshControl
 } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Sparkles, Calendar, Clock, AlertCircle } from 'lucide-react-native';
 
 interface SpecialPrayer {
@@ -27,30 +30,64 @@ export default function SpecialPrayersScreen() {
 
   const [specials, setSpecials] = useState<SpecialPrayer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
   const fetchSpecials = async () => {
+    // 1. Load instantly from cache
+    try {
+      const cached = await AsyncStorage.getItem('cache_special_prayers');
+      if (cached) {
+        setSpecials(JSON.parse(cached));
+        setLoading(false);
+      }
+    } catch (e) {
+      console.log('Failed to read cache_special_prayers', e);
+    }
+
     if (!followedMosqueId) {
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
+    // 2. Fetch in background with timeout
     try {
       setError('');
-      const res = await fetch(`${apiUrl}/api/special-prayers?mosqueId=${followedMosqueId}`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setSpecials(data);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+
+      const res = await fetch(`${apiUrl}/api/special-prayers?mosqueId=${followedMosqueId}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        setSpecials(data);
+        await AsyncStorage.setItem('cache_special_prayers', JSON.stringify(data));
+      } else {
+        throw new Error();
+      }
     } catch (err) {
-      setError('Could not load special services.');
+      console.warn('Fetch special prayers failed, using cache:', err);
+      if (specials.length === 0) {
+        setError('Could not load special services.');
+      }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  useEffect(() => {
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
     fetchSpecials();
   }, [followedMosqueId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSpecials();
+    }, [followedMosqueId])
+  );
 
   const colors = {
     bg: isDark ? '#090f0d' : '#f4f7f6',
@@ -134,6 +171,9 @@ export default function SpecialPrayersScreen() {
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <AlertCircle size={24} color={colors.textSecondary} />

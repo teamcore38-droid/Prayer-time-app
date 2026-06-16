@@ -46,7 +46,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Auto-select default mosque if none is followed
         if (!currentMosqueId) {
           try {
-            const res = await fetch(`${API_URL}/api/mosques`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+            const res = await fetch(`${API_URL}/api/mosques`, { signal: controller.signal });
+            clearTimeout(timeoutId);
             if (res.ok) {
               const data = await res.json();
               if (data && data.length > 0) {
@@ -70,11 +73,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           // Verify token against API
           try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
             const res = await fetch(`${API_URL}/api/auth/me`, {
               headers: {
                 'Authorization': `Bearer ${storedToken}`,
               },
+              signal: controller.signal,
             });
+            clearTimeout(timeoutId);
             if (res.ok) {
               const data = await res.json();
               setToken(storedToken);

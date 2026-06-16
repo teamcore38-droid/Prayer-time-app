@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   StyleSheet, 
   Text, 
   View, 
   FlatList, 
   SafeAreaView, 
-  useColorScheme
+  useColorScheme,
+  RefreshControl
 } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Clock, Calendar, AlertCircle } from 'lucide-react-native';
 
 interface TimePair {
@@ -33,35 +36,71 @@ export default function PrayersScreen() {
 
   const [prayers, setPrayers] = useState<PrayerTimeRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchSchedules = async () => {
-      if (!followedMosqueId) {
+  const fetchSchedules = async () => {
+    // 1. Read instantly from cache
+    try {
+      const cached = await AsyncStorage.getItem('cache_monthly_prayers');
+      if (cached) {
+        setPrayers(JSON.parse(cached));
         setLoading(false);
-        return;
       }
+    } catch (e) {
+      console.log('Failed to read cache_monthly_prayers', e);
+    }
 
-      try {
-        setError('');
-        // Fetch all schedules for this month
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        
-        const res = await fetch(`${apiUrl}/api/prayers?mosqueId=${followedMosqueId}&month=${year}-${month}`);
-        if (!res.ok) throw new Error();
+    if (!followedMosqueId) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    // 2. Fetch in background with timeout
+    try {
+      setError('');
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+
+      const res = await fetch(
+        `${apiUrl}/api/prayers?mosqueId=${followedMosqueId}&month=${year}-${month}`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
         const data = await res.json();
         setPrayers(data);
-      } catch (err) {
-        setError('Could not fetch monthly schedules.');
-      } finally {
-        setLoading(false);
+        await AsyncStorage.setItem('cache_monthly_prayers', JSON.stringify(data));
+      } else {
+        throw new Error();
       }
-    };
+    } catch (err) {
+      console.warn('Fetch monthly schedules failed, using cache:', err);
+      if (prayers.length === 0) {
+        setError('Could not fetch monthly schedules.');
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
     fetchSchedules();
   }, [followedMosqueId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSchedules();
+    }, [followedMosqueId])
+  );
 
   const colors = {
     bg: isDark ? '#090f0d' : '#f4f7f6',
@@ -158,6 +197,9 @@ export default function PrayersScreen() {
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+        }
         ListHeaderComponent={
           <View style={styles.tableLegend}>
             <Calendar size={12} color={colors.textSecondary} />

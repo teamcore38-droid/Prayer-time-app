@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -7,10 +7,12 @@ import {
   TouchableOpacity, 
   SafeAreaView, 
   Image,
-  useColorScheme
+  useColorScheme,
+  RefreshControl
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MapPin, Phone, Mail, Globe, ArrowLeft, Info, Compass } from 'lucide-react-native';
 
 interface Mosque {
@@ -35,25 +37,53 @@ export default function MosqueInfoScreen() {
 
   const [mosque, setMosque] = useState<Mosque | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchDetails = async () => {
+    // 1. Read instantly from cache
+    try {
+      const cached = await AsyncStorage.getItem('cache_mosque');
+      if (cached) {
+        setMosque(JSON.parse(cached));
+        setLoading(false);
+      }
+    } catch (e) {
+      console.log('Failed to read cache_mosque', e);
+    }
+
+    if (!followedMosqueId) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    // 2. Fetch in background with timeout
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+
+      const res = await fetch(`${apiUrl}/api/mosques/${followedMosqueId}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        setMosque(data);
+        await AsyncStorage.setItem('cache_mosque', JSON.stringify(data));
+      }
+    } catch (err) {
+      console.warn('Fetch mosque details failed, using cache:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchDetails();
+  }, [followedMosqueId]);
 
   useEffect(() => {
-    const fetchDetails = async () => {
-      if (!followedMosqueId) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const res = await fetch(`${apiUrl}/api/mosques/${followedMosqueId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setMosque(data);
-        }
-      } catch (err) {
-        console.warn(err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchDetails();
   }, [followedMosqueId]);
 
@@ -85,7 +115,12 @@ export default function MosqueInfoScreen() {
       </TouchableOpacity>
 
       {mosque ? (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+          }
+        >
           {/* Logo / Header banner */}
           <View style={[styles.headerBanner, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
             {mosque.logo ? (

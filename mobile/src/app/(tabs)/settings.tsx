@@ -28,8 +28,7 @@ export default function SettingsScreen() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
 
-  const [mosques, setMosques] = useState<Mosque[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [followedMosque, setFollowedMosque] = useState<Mosque | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Notification Toggles
@@ -38,16 +37,37 @@ export default function SettingsScreen() {
   const [specialReminder, setSpecialReminder] = useState(true);
   const [eventReminder, setEventReminder] = useState(true);
 
-  // Fetch all registered mosques
-  const fetchMosques = async () => {
+  // Fetch followed mosque details
+  const fetchMosqueDetails = async () => {
+    // 1. Read instantly from cache
     try {
-      const res = await fetch(`${apiUrl}/api/mosques`);
+      const cached = await AsyncStorage.getItem('cache_mosque');
+      if (cached) {
+        setFollowedMosque(JSON.parse(cached));
+        setLoading(false);
+      }
+    } catch (e) {
+      console.log('Failed to read cache_mosque', e);
+    }
+
+    if (!followedMosqueId) {
+      setLoading(false);
+      return;
+    }
+
+    // 2. Fetch in background with timeout
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+      const res = await fetch(`${apiUrl}/api/mosques/${followedMosqueId}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (res.ok) {
         const data = await res.json();
-        setMosques(data);
+        setFollowedMosque(data);
+        await AsyncStorage.setItem('cache_mosque', JSON.stringify(data));
       }
     } catch (err) {
-      console.warn('Failed to load mosque list', err);
+      console.warn('Failed to load followed mosque details', err);
     } finally {
       setLoading(false);
     }
@@ -71,9 +91,9 @@ export default function SettingsScreen() {
   };
 
   useEffect(() => {
-    fetchMosques();
+    fetchMosqueDetails();
     loadReminderSettings();
-  }, []);
+  }, [followedMosqueId]);
 
   const toggleSwitch = async (key: string, value: boolean, setter: (val: boolean) => void) => {
     setter(value);
@@ -100,8 +120,6 @@ export default function SettingsScreen() {
       console.log('Failed to upload device subscription to API');
     }
   };
-
-  const followedMosque = mosques.find(m => m._id === followedMosqueId);
 
   const colors = {
     bg: isDark ? '#090f0d' : '#f4f7f6',

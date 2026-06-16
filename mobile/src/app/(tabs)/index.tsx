@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getHijriDate, getNextPrayer, formatTimeRemaining, NextPrayerInfo } from '@/utils/prayerHelpers';
 import { Clock, MapPin, Sparkles, BookOpen, AlertCircle, ChevronRight } from 'lucide-react-native';
 
@@ -73,32 +74,51 @@ export default function HomeDashboard() {
 
   // Fetch mosque info and prayer times
   const loadData = async () => {
+    // 1. Load instantly from cache
+    try {
+      const cachedMosque = await AsyncStorage.getItem('cache_mosque');
+      const cachedTimetable = await AsyncStorage.getItem('cache_timetable');
+      if (cachedMosque) setMosque(JSON.parse(cachedMosque));
+      if (cachedTimetable) setTimetable(JSON.parse(cachedTimetable));
+    } catch (e) {
+      console.log('Failed to read cache', e);
+    }
+
     if (!followedMosqueId) {
       setLoading(false);
       return;
     }
 
+    // 2. Fetch in background with network timeout
     try {
-      setError('');
-      // 1. Fetch mosque details
-      const mosqueRes = await fetch(`${apiUrl}/api/mosques/${followedMosqueId}`);
-      if (!mosqueRes.ok) throw new Error('Failed to load mosque details');
-      const mosqueData = await mosqueRes.json();
-      setMosque(mosqueData);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000); // 6-second timeout
 
-      // 2. Fetch today's prayer times
+      setError('');
+      // Fetch mosque details
+      const mosqueRes = await fetch(`${apiUrl}/api/mosques/${followedMosqueId}`, { signal: controller.signal });
+      if (mosqueRes.ok) {
+        const mosqueData = await mosqueRes.json();
+        setMosque(mosqueData);
+        await AsyncStorage.setItem('cache_mosque', JSON.stringify(mosqueData));
+      }
+
+      // Fetch today's prayer times
       const todayStr = new Date().toISOString().split('T')[0];
-      const prayerRes = await fetch(`${apiUrl}/api/prayers?mosqueId=${followedMosqueId}&date=${todayStr}`);
+      const prayerRes = await fetch(`${apiUrl}/api/prayers?mosqueId=${followedMosqueId}&date=${todayStr}`, { signal: controller.signal });
       if (prayerRes.ok) {
         const prayerData = await prayerRes.json();
         if (prayerData && prayerData.length > 0) {
           setTimetable(prayerData[0]);
-        } else {
-          setTimetable(null);
+          await AsyncStorage.setItem('cache_timetable', JSON.stringify(prayerData[0]));
         }
       }
+      clearTimeout(timeoutId);
     } catch (err: any) {
-      setError('Connection offline. Pull to retry.');
+      console.log('Fetch failed, using cached data:', err.message);
+      if (!timetable) {
+        setError('Connection offline. Showing cached times.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

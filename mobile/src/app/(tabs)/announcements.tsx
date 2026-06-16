@@ -6,10 +6,12 @@ import {
   FlatList, 
   SafeAreaView, 
   useColorScheme,
-  Image
+  Image,
+  RefreshControl
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Megaphone, Calendar, Tag, AlertCircle } from 'lucide-react-native';
 
 interface Announcement {
@@ -28,26 +30,58 @@ export default function AnnouncementsScreen() {
 
   const [notices, setNotices] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
   const fetchNotices = async () => {
+    // 1. Load instantly from cache
+    try {
+      const cached = await AsyncStorage.getItem('cache_notices');
+      if (cached) {
+        setNotices(JSON.parse(cached));
+        setLoading(false);
+      }
+    } catch (e) {
+      console.log('Failed to read cache_notices', e);
+    }
+
     if (!followedMosqueId) {
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
+    // 2. Fetch in background with timeout
     try {
       setError('');
-      const res = await fetch(`${apiUrl}/api/announcements?mosqueId=${followedMosqueId}`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setNotices(data);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+
+      const res = await fetch(`${apiUrl}/api/announcements?mosqueId=${followedMosqueId}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        setNotices(data);
+        await AsyncStorage.setItem('cache_notices', JSON.stringify(data));
+      } else {
+        throw new Error();
+      }
     } catch (err) {
-      setError('Could not load announcements.');
+      console.warn('Fetch notices failed, using cache:', err);
+      if (notices.length === 0) {
+        setError('Could not load announcements.');
+      }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchNotices();
+  }, [followedMosqueId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -150,6 +184,9 @@ export default function AnnouncementsScreen() {
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <AlertCircle size={24} color={colors.textSecondary} />
