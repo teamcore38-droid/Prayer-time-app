@@ -222,97 +222,149 @@ export default function EditPrayersScreen() {
     year: 'numeric'
   });
 
-  // Load times for selected date and other mosque details
-  const loadData = async () => {
+  // Cache for daily prayer times by date string (e.g. '2026-06-16' => Timetable data)
+  const [dailyCache, setDailyCache] = useState<Record<string, any>>({});
+  const [dailyLoading, setDailyLoading] = useState(false);
+
+  const applyTimetableTimes = (timetable: any) => {
+    if (!timetable) {
+      clearDailyInputs();
+      return;
+    }
+    const sun = splitTime(timetable.sunrise);
+    setSunriseHour(sun.hour); setSunriseMin(sun.minute);
+    
+    const fAdhan = splitTime(timetable.fajr?.adhan);
+    setFajrAdhanHour(fAdhan.hour); setFajrAdhanMin(fAdhan.minute);
+    
+    const fIqamah = splitTime(timetable.fajr?.iqamah);
+    setFajrIqamahHour(fIqamah.hour); setFajrIqamahMin(fIqamah.minute);
+    
+    const dAdhan = splitTime(timetable.dhuhr?.adhan);
+    setDhuhrAdhanHour(dAdhan.hour); setDhuhrAdhanMin(dAdhan.minute);
+    
+    const dIqamah = splitTime(timetable.dhuhr?.iqamah);
+    setDhuhrIqamahHour(dIqamah.hour); setDhuhrIqamahMin(dIqamah.minute);
+    
+    const aAdhan = splitTime(timetable.asr?.adhan);
+    setAsrAdhanHour(aAdhan.hour); setAsrAdhanMin(aAdhan.minute);
+    
+    const aIqamah = splitTime(timetable.asr?.iqamah);
+    setAsrIqamahHour(aIqamah.hour); setAsrIqamahMin(aIqamah.minute);
+    
+    const mAdhan = splitTime(timetable.maghrib?.adhan);
+    setMaghribAdhanHour(mAdhan.hour); setMaghribAdhanMin(mAdhan.minute);
+    
+    const mIqamah = splitTime(timetable.maghrib?.iqamah);
+    setMaghribIqamahHour(mIqamah.hour); setMaghribIqamahMin(mIqamah.minute);
+    
+    const iAdhan = splitTime(timetable.isha?.adhan);
+    setIshaAdhanHour(iAdhan.hour); setIshaAdhanMin(iAdhan.minute);
+    
+    const iIqamah = splitTime(timetable.isha?.iqamah);
+    setIshaIqamahHour(iIqamah.hour); setIshaIqamahMin(iIqamah.minute);
+  };
+
+  const clearDailyInputs = () => {
+    setSunriseHour(''); setSunriseMin('');
+    setFajrAdhanHour(''); setFajrAdhanMin('');
+    setFajrIqamahHour(''); setFajrIqamahMin('');
+    setDhuhrAdhanHour(''); setDhuhrAdhanMin('');
+    setDhuhrIqamahHour(''); setDhuhrIqamahMin('');
+    setAsrAdhanHour(''); setAsrAdhanMin('');
+    setAsrIqamahHour(''); setAsrIqamahMin('');
+    setMaghribAdhanHour(''); setMaghribAdhanMin('');
+    setMaghribIqamahHour(''); setMaghribIqamahMin('');
+    setIshaAdhanHour(''); setIshaAdhanMin('');
+    setIshaIqamahHour(''); setIshaIqamahMin('');
+  };
+
+  const fetchDailyTimesForDate = async (targetDateStr: string) => {
     if (!followedMosqueId) return;
-    setLoading(true);
+
+    // 1. Check if we have this date in the cache
+    if (targetDateStr in dailyCache) {
+      applyTimetableTimes(dailyCache[targetDateStr]);
+      return;
+    }
+
+    // 2. Otherwise, fetch from API
+    setDailyLoading(true);
     try {
-      // 1. Fetch daily prayers
-      const prayerRes = await fetch(`${apiUrl}/api/prayers?mosqueId=${followedMosqueId}&date=${dateStr}`);
-      if (prayerRes.ok) {
-        const data = await prayerRes.json();
+      const res = await fetch(`${apiUrl}/api/prayers?mosqueId=${followedMosqueId}&date=${targetDateStr}`);
+      if (res.ok) {
+        const data = await res.json();
         if (data && data.length > 0) {
           const timetable = data[0];
-          const sun = splitTime(timetable.sunrise);
-          setSunriseHour(sun.hour); setSunriseMin(sun.minute);
-          
-          const fAdhan = splitTime(timetable.fajr?.adhan);
-          setFajrAdhanHour(fAdhan.hour); setFajrAdhanMin(fAdhan.minute);
-          
-          const fIqamah = splitTime(timetable.fajr?.iqamah);
-          setFajrIqamahHour(fIqamah.hour); setFajrIqamahMin(fIqamah.minute);
-          
-          const dAdhan = splitTime(timetable.dhuhr?.adhan);
-          setDhuhrAdhanHour(dAdhan.hour); setDhuhrAdhanMin(dAdhan.minute);
-          
-          const dIqamah = splitTime(timetable.dhuhr?.iqamah);
-          setDhuhrIqamahHour(dIqamah.hour); setDhuhrIqamahMin(dIqamah.minute);
-          
-          const aAdhan = splitTime(timetable.asr?.adhan);
-          setAsrAdhanHour(aAdhan.hour); setAsrAdhanMin(aAdhan.minute);
-          
-          const aIqamah = splitTime(timetable.asr?.iqamah);
-          setAsrIqamahHour(aIqamah.hour); setAsrIqamahMin(aIqamah.minute);
-          
-          const mAdhan = splitTime(timetable.maghrib?.adhan);
-          setMaghribAdhanHour(mAdhan.hour); setMaghribAdhanMin(mAdhan.minute);
-          
-          const mIqamah = splitTime(timetable.maghrib?.iqamah);
-          setMaghribIqamahHour(mIqamah.hour); setMaghribIqamahMin(mIqamah.minute);
-          
-          const iAdhan = splitTime(timetable.isha?.adhan);
-          setIshaAdhanHour(iAdhan.hour); setIshaAdhanMin(iAdhan.minute);
-          
-          const iIqamah = splitTime(timetable.isha?.iqamah);
-          setIshaIqamahHour(iIqamah.hour); setIshaIqamahMin(iIqamah.minute);
+          // Save to cache
+          setDailyCache(prev => ({ ...prev, [targetDateStr]: timetable }));
+          applyTimetableTimes(timetable);
         } else {
-          // Clear inputs if no record exists for this date yet
-          setSunriseHour(''); setSunriseMin('');
-          setFajrAdhanHour(''); setFajrAdhanMin('');
-          setFajrIqamahHour(''); setFajrIqamahMin('');
-          setDhuhrAdhanHour(''); setDhuhrAdhanMin('');
-          setDhuhrIqamahHour(''); setDhuhrIqamahMin('');
-          setAsrAdhanHour(''); setAsrAdhanMin('');
-          setAsrIqamahHour(''); setAsrIqamahMin('');
-          setMaghribAdhanHour(''); setMaghribAdhanMin('');
-          setMaghribIqamahHour(''); setMaghribIqamahMin('');
-          setIshaAdhanHour(''); setIshaAdhanMin('');
-          setIshaIqamahHour(''); setIshaIqamahMin('');
+          // No record exists
+          clearDailyInputs();
+          setDailyCache(prev => ({ ...prev, [targetDateStr]: null }));
         }
       }
+    } catch (err) {
+      console.warn('Failed to fetch daily times', err);
+    } finally {
+      setDailyLoading(false);
+    }
+  };
 
-      // 2. Fetch Mosque details
+  const fetchStaticDetails = async () => {
+    if (!followedMosqueId) return;
+    try {
+      // Fetch Mosque details
       const mosqueRes = await fetch(`${apiUrl}/api/mosques/${followedMosqueId}`);
       if (mosqueRes.ok) {
         const mosqueData = await mosqueRes.json();
-        setJumuahSessions(mosqueData.jumuahSessions || []);
-        setMosqueName(mosqueData.mosqueName || '');
-        setAddress(mosqueData.address || '');
-        setCity(mosqueData.city || '');
-        setDistrict(mosqueData.district || '');
-        setCountry(mosqueData.country || '');
-        setPhone(mosqueData.phone || '');
-        setEmail(mosqueData.email || '');
-        setLatitude(mosqueData.latitude || 0);
-        setLongitude(mosqueData.longitude || 0);
+        if (mosqueData) {
+          setJumuahSessions(mosqueData.jumuahSessions || []);
+          setMosqueName(mosqueData.mosqueName || '');
+          setAddress(mosqueData.address || '');
+          setCity(mosqueData.city || '');
+          setDistrict(mosqueData.district || '');
+          setCountry(mosqueData.country || '');
+          setPhone(mosqueData.phone || '');
+          setEmail(mosqueData.email || '');
+          setLatitude(mosqueData.latitude || 0);
+          setLongitude(mosqueData.longitude || 0);
+        }
       }
 
-      // 3. Fetch Announcements
+      // Fetch Announcements
       const annRes = await fetch(`${apiUrl}/api/announcements?mosqueId=${followedMosqueId}`);
       if (annRes.ok) {
         const annData = await annRes.json();
         setAnnouncements(annData || []);
       }
     } catch (err) {
-      console.warn('Failed to load dashboard data', err);
-    } finally {
-      setLoading(false);
+      console.warn('Failed to load static mosque details', err);
     }
   };
 
+  const loadData = async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchStaticDetails(),
+      fetchDailyTimesForDate(dateStr)
+    ]);
+    setLoading(false);
+  };
+
+  // Initial full load
   useEffect(() => {
     loadData();
-  }, [selectedDate, followedMosqueId]);
+  }, [followedMosqueId]);
+
+  // Date change lightweight load
+  useEffect(() => {
+    // Only load if the initial page load is finished
+    if (!loading) {
+      fetchDailyTimesForDate(dateStr);
+    }
+  }, [selectedDate]);
 
   const changeDate = (days: number) => {
     const next = new Date(selectedDate);
@@ -376,7 +428,17 @@ export default function EditPrayersScreen() {
       if (!res.ok) throw new Error(data.error || 'Failed to save times');
 
       Alert.alert('Success', 'Daily prayer times updated successfully!');
-      loadData();
+      
+      // Update local memory cache with the newly saved times
+      const savedTimetable = {
+        sunrise: normalized['Sunrise'],
+        fajr: { adhan: normalized['Fajr Adhan'], iqamah: normalized['Fajr Iqamah'] },
+        dhuhr: { adhan: normalized['Dhuhr Adhan'], iqamah: normalized['Dhuhr Iqamah'] },
+        asr: { adhan: normalized['Asr Adhan'], iqamah: normalized['Asr Iqamah'] },
+        maghrib: { adhan: normalized['Maghrib Adhan'], iqamah: normalized['Maghrib Iqamah'] },
+        isha: { adhan: normalized['Isha Adhan'], iqamah: normalized['Isha Iqamah'] }
+      };
+      setDailyCache(prev => ({ ...prev, [dateStr]: savedTimetable }));
     } catch (err: any) {
       Alert.alert('Save Failed', err.message || 'Check your internet connection.');
     } finally {
@@ -726,6 +788,7 @@ export default function EditPrayersScreen() {
                   >
                     <Calendar size={14} color={colors.primary} />
                     <Text style={[styles.dateLabel, { color: colors.text }]}>{displayDate}</Text>
+                    {dailyLoading && <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: 6 }} />}
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => changeDate(1)} style={styles.navBtn}>
                     <ChevronRight size={20} color={colors.text} />
