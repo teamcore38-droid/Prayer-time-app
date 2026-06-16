@@ -46,6 +46,72 @@ interface Announcement {
   createdAt: string;
 }
 
+const validateTime = (timeStr: string, label: string): { isValid: boolean; formatted: string; error?: string } => {
+  const trimmed = timeStr ? timeStr.trim() : '';
+  if (!trimmed) {
+    return { isValid: false, formatted: '', error: `${label} is required.` };
+  }
+
+  // Regex checks for numbers only with exactly one colon or semicolon between hour and minute
+  const timeRegex = /^\d{1,2}[:;]\d{2}$/;
+  if (!timeRegex.test(trimmed)) {
+    return { 
+      isValid: false, 
+      formatted: trimmed, 
+      error: `${label} must contain numbers only, separated by a colon or semicolon (e.g. 05:45 or 18;30).` 
+    };
+  }
+
+  const parts = trimmed.split(/[:;]/);
+  const hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+
+  if (hours < 0 || hours > 23) {
+    return { 
+      isValid: false, 
+      formatted: trimmed, 
+      error: `${label} hour must be between 0 and 23.` 
+    };
+  }
+
+  if (minutes < 0 || minutes > 59) {
+    return { 
+      isValid: false, 
+      formatted: trimmed, 
+      error: `${label} minute must be between 00 and 59.` 
+    };
+  }
+
+  const normalizedHours = String(hours).padStart(2, '0');
+  const normalizedMinutes = String(minutes).padStart(2, '0');
+  return { isValid: true, formatted: `${normalizedHours}:${normalizedMinutes}` };
+};
+
+const validateEmail = (emailStr: string): boolean => {
+  if (!emailStr) return true;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(emailStr.trim());
+};
+
+const validatePhone = (phoneStr: string): boolean => {
+  if (!phoneStr) return true;
+  const phoneRegex = /^[0-9+\s()-]{7,20}$/;
+  return phoneRegex.test(phoneStr.trim());
+};
+
+const validateCoordinates = (lat: any, lng: any): { isValid: boolean; latNum: number; lngNum: number; error?: string } => {
+  const latNum = parseFloat(lat);
+  const lngNum = parseFloat(lng);
+
+  if (isNaN(latNum) || latNum < -90 || latNum > 90) {
+    return { isValid: false, latNum: 0, lngNum: 0, error: 'Latitude must be a valid number between -90 and 90.' };
+  }
+  if (isNaN(lngNum) || lngNum < -180 || lngNum > 180) {
+    return { isValid: false, latNum: 0, lngNum: 0, error: 'Longitude must be a valid number between -180 and 180.' };
+  }
+  return { isValid: true, latNum, lngNum };
+};
+
 export default function EditPrayersScreen() {
   const router = useRouter();
   const { followedMosqueId, token, apiUrl } = useAuth();
@@ -173,17 +239,46 @@ export default function EditPrayersScreen() {
 
   const handleSaveDaily = async () => {
     if (!token) return;
+
+    // Validate and normalize all daily prayer times
+    const timesToValidate = [
+      { val: sunrise, setter: setSunrise, label: 'Sunrise' },
+      { val: fajrAdhan, setter: setFajrAdhan, label: 'Fajr Adhan' },
+      { val: fajrIqamah, setter: setFajrIqamah, label: 'Fajr Iqamah' },
+      { val: dhuhrAdhan, setter: setDhuhrAdhan, label: 'Dhuhr Adhan' },
+      { val: dhuhrIqamah, setter: setDhuhrIqamah, label: 'Dhuhr Iqamah' },
+      { val: asrAdhan, setter: setAsrAdhan, label: 'Asr Adhan' },
+      { val: asrIqamah, setter: setAsrIqamah, label: 'Asr Iqamah' },
+      { val: maghribAdhan, setter: setMaghribAdhan, label: 'Maghrib Adhan' },
+      { val: maghribIqamah, setter: setMaghribIqamah, label: 'Maghrib Iqamah' },
+      { val: ishaAdhan, setter: setIshaAdhan, label: 'Isha Adhan' },
+      { val: ishaIqamah, setter: setIshaIqamah, label: 'Isha Iqamah' },
+    ];
+
+    const normalized: { [key: string]: string } = {};
+
+    for (const item of timesToValidate) {
+      const res = validateTime(item.val, item.label);
+      if (!res.isValid) {
+        Alert.alert('Validation Error', res.error);
+        return;
+      }
+      normalized[item.label] = res.formatted;
+      // Update local state with the normalized value
+      item.setter(res.formatted);
+    }
+
     setSaving(true);
     try {
       const payload = {
         mosqueId: followedMosqueId,
         date: dateStr,
-        sunrise,
-        fajr: { adhan: fajrAdhan, iqamah: fajrIqamah },
-        dhuhr: { adhan: dhuhrAdhan, iqamah: dhuhrIqamah },
-        asr: { adhan: asrAdhan, iqamah: asrIqamah },
-        maghrib: { adhan: maghribAdhan, iqamah: maghribIqamah },
-        isha: { adhan: ishaAdhan, iqamah: ishaIqamah }
+        sunrise: normalized['Sunrise'],
+        fajr: { adhan: normalized['Fajr Adhan'], iqamah: normalized['Fajr Iqamah'] },
+        dhuhr: { adhan: normalized['Dhuhr Adhan'], iqamah: normalized['Dhuhr Iqamah'] },
+        asr: { adhan: normalized['Asr Adhan'], iqamah: normalized['Asr Iqamah'] },
+        maghrib: { adhan: normalized['Maghrib Adhan'], iqamah: normalized['Maghrib Iqamah'] },
+        isha: { adhan: normalized['Isha Adhan'], iqamah: normalized['Isha Iqamah'] }
       };
 
       const res = await fetch(`${apiUrl}/api/prayers`, {
@@ -209,6 +304,31 @@ export default function EditPrayersScreen() {
 
   const handleSaveJumuah = async () => {
     if (!token) return;
+
+    // Validate and normalize Friday Jumuah session times
+    const validatedSessions = [];
+    for (const session of jumuahSessions) {
+      const khutbahRes = validateTime(session.khutbah, `Session ${session.sessionNumber} Khutbah`);
+      if (!khutbahRes.isValid) {
+        Alert.alert('Validation Error', khutbahRes.error);
+        return;
+      }
+      const iqamahRes = validateTime(session.iqamah, `Session ${session.sessionNumber} Salah`);
+      if (!iqamahRes.isValid) {
+        Alert.alert('Validation Error', iqamahRes.error);
+        return;
+      }
+
+      validatedSessions.push({
+        sessionNumber: session.sessionNumber,
+        khutbah: khutbahRes.formatted,
+        iqamah: iqamahRes.formatted
+      });
+    }
+
+    // Update local state
+    setJumuahSessions(validatedSessions);
+
     setSaving(true);
     try {
       const res = await fetch(`${apiUrl}/api/mosques/${followedMosqueId}`, {
@@ -217,7 +337,7 @@ export default function EditPrayersScreen() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ jumuahSessions })
+        body: JSON.stringify({ jumuahSessions: validatedSessions })
       });
 
       const data = await res.json();
@@ -238,6 +358,26 @@ export default function EditPrayersScreen() {
       Alert.alert('Error', 'Please fill in all required fields (Name, Address, City, District, Country).');
       return;
     }
+
+    // Validate phone number if provided
+    if (phone && !validatePhone(phone)) {
+      Alert.alert('Validation Error', 'Please enter a valid telephone number.');
+      return;
+    }
+
+    // Validate email if provided
+    if (email && !validateEmail(email)) {
+      Alert.alert('Validation Error', 'Please enter a valid email address.');
+      return;
+    }
+
+    // Validate coordinate numbers
+    const coordRes = validateCoordinates(latitude, longitude);
+    if (!coordRes.isValid) {
+      Alert.alert('Validation Error', coordRes.error);
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch(`${apiUrl}/api/mosques/${followedMosqueId}`, {
@@ -252,10 +392,10 @@ export default function EditPrayersScreen() {
           city,
           district,
           country,
-          phone,
-          email,
-          latitude,
-          longitude
+          phone: phone ? phone.trim() : '',
+          email: email ? email.trim().toLowerCase() : '',
+          latitude: coordRes.latNum,
+          longitude: coordRes.lngNum
         })
       });
 
