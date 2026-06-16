@@ -11,6 +11,7 @@ import {
   Alert,
   useColorScheme
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -125,20 +126,76 @@ export default function EditPrayersScreen() {
 
   // Daily Prayer states
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [sunrise, setSunrise] = useState('');
-  const [fajrAdhan, setFajrAdhan] = useState('');
-  const [fajrIqamah, setFajrIqamah] = useState('');
-  const [dhuhrAdhan, setDhuhrAdhan] = useState('');
-  const [dhuhrIqamah, setDhuhrIqamah] = useState('');
-  const [asrAdhan, setAsrAdhan] = useState('');
-  const [asrIqamah, setAsrIqamah] = useState('');
-  const [maghribAdhan, setMaghribAdhan] = useState('');
-  const [maghribIqamah, setMaghribIqamah] = useState('');
-  const [ishaAdhan, setIshaAdhan] = useState('');
-  const [ishaIqamah, setIshaIqamah] = useState('');
+  
+  // Daily Prayer states (separated hour and minute)
+  const [sunriseHour, setSunriseHour] = useState('');
+  const [sunriseMin, setSunriseMin] = useState('');
+  const [fajrAdhanHour, setFajrAdhanHour] = useState('');
+  const [fajrAdhanMin, setFajrAdhanMin] = useState('');
+  const [fajrIqamahHour, setFajrIqamahHour] = useState('');
+  const [fajrIqamahMin, setFajrIqamahMin] = useState('');
+  const [dhuhrAdhanHour, setDhuhrAdhanHour] = useState('');
+  const [dhuhrAdhanMin, setDhuhrAdhanMin] = useState('');
+  const [dhuhrIqamahHour, setDhuhrIqamahHour] = useState('');
+  const [dhuhrIqamahMin, setDhuhrIqamahMin] = useState('');
+  const [asrAdhanHour, setAsrAdhanHour] = useState('');
+  const [asrAdhanMin, setAsrAdhanMin] = useState('');
+  const [asrIqamahHour, setAsrIqamahHour] = useState('');
+  const [asrIqamahMin, setAsrIqamahMin] = useState('');
+  const [maghribAdhanHour, setMaghribAdhanHour] = useState('');
+  const [maghribAdhanMin, setMaghribAdhanMin] = useState('');
+  const [maghribIqamahHour, setMaghribIqamahHour] = useState('');
+  const [maghribIqamahMin, setMaghribIqamahMin] = useState('');
+  const [ishaAdhanHour, setIshaAdhanHour] = useState('');
+  const [ishaAdhanMin, setIshaAdhanMin] = useState('');
+  const [ishaIqamahHour, setIshaIqamahHour] = useState('');
+  const [ishaIqamahMin, setIshaIqamahMin] = useState('');
+
+  // Date picker state
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Swipe gesture state
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   // Friday Jumuah state
   const [jumuahSessions, setJumuahSessions] = useState<JumuahSession[]>([]);
+
+  const splitTime = (timeStr: string) => {
+    if (!timeStr) return { hour: '', minute: '' };
+    const parts = timeStr.split(/[:;]/);
+    return {
+      hour: parts[0] || '',
+      minute: parts[1] || ''
+    };
+  };
+
+  const handleTouchStart = (e: any) => {
+    setTouchStartX(e.nativeEvent.pageX);
+  };
+
+  const handleTouchEnd = (e: any) => {
+    if (touchStartX === null) return;
+    const touchEndX = e.nativeEvent.pageX;
+    const diffX = touchStartX - touchEndX;
+
+    const swipeThreshold = 60; // 60px swipe
+
+    if (diffX > swipeThreshold) {
+      // Swipe Left -> Next Day
+      changeDate(1);
+    } else if (diffX < -swipeThreshold) {
+      // Swipe Right -> Previous Day
+      changeDate(-1);
+    }
+    setTouchStartX(null);
+  };
+
+  const onDateChange = (event: any, selected: Date | undefined) => {
+    setShowDatePicker(false);
+    if (selected) {
+      setSelectedDate(selected);
+    }
+  };
 
   // Mosque Profile states
   const [mosqueName, setMosqueName] = useState('');
@@ -176,25 +233,51 @@ export default function EditPrayersScreen() {
         const data = await prayerRes.json();
         if (data && data.length > 0) {
           const timetable = data[0];
-          setSunrise(timetable.sunrise || '');
-          setFajrAdhan(timetable.fajr?.adhan || '');
-          setFajrIqamah(timetable.fajr?.iqamah || '');
-          setDhuhrAdhan(timetable.dhuhr?.adhan || '');
-          setDhuhrIqamah(timetable.dhuhr?.iqamah || '');
-          setAsrAdhan(timetable.asr?.adhan || '');
-          setAsrIqamah(timetable.asr?.iqamah || '');
-          setMaghribAdhan(timetable.maghrib?.adhan || '');
-          setMaghribIqamah(timetable.maghrib?.iqamah || '');
-          setIshaAdhan(timetable.isha?.adhan || '');
-          setIshaIqamah(timetable.isha?.iqamah || '');
+          const sun = splitTime(timetable.sunrise);
+          setSunriseHour(sun.hour); setSunriseMin(sun.minute);
+          
+          const fAdhan = splitTime(timetable.fajr?.adhan);
+          setFajrAdhanHour(fAdhan.hour); setFajrAdhanMin(fAdhan.minute);
+          
+          const fIqamah = splitTime(timetable.fajr?.iqamah);
+          setFajrIqamahHour(fIqamah.hour); setFajrIqamahMin(fIqamah.minute);
+          
+          const dAdhan = splitTime(timetable.dhuhr?.adhan);
+          setDhuhrAdhanHour(dAdhan.hour); setDhuhrAdhanMin(dAdhan.minute);
+          
+          const dIqamah = splitTime(timetable.dhuhr?.iqamah);
+          setDhuhrIqamahHour(dIqamah.hour); setDhuhrIqamahMin(dIqamah.minute);
+          
+          const aAdhan = splitTime(timetable.asr?.adhan);
+          setAsrAdhanHour(aAdhan.hour); setAsrAdhanMin(aAdhan.minute);
+          
+          const aIqamah = splitTime(timetable.asr?.iqamah);
+          setAsrIqamahHour(aIqamah.hour); setAsrIqamahMin(aIqamah.minute);
+          
+          const mAdhan = splitTime(timetable.maghrib?.adhan);
+          setMaghribAdhanHour(mAdhan.hour); setMaghribAdhanMin(mAdhan.minute);
+          
+          const mIqamah = splitTime(timetable.maghrib?.iqamah);
+          setMaghribIqamahHour(mIqamah.hour); setMaghribIqamahMin(mIqamah.minute);
+          
+          const iAdhan = splitTime(timetable.isha?.adhan);
+          setIshaAdhanHour(iAdhan.hour); setIshaAdhanMin(iAdhan.minute);
+          
+          const iIqamah = splitTime(timetable.isha?.iqamah);
+          setIshaIqamahHour(iIqamah.hour); setIshaIqamahMin(iIqamah.minute);
         } else {
           // Clear inputs if no record exists for this date yet
-          setSunrise('');
-          setFajrAdhan(''); setFajrIqamah('');
-          setDhuhrAdhan(''); setDhuhrIqamah('');
-          setAsrAdhan(''); setAsrIqamah('');
-          setMaghribAdhan(''); setMaghribIqamah('');
-          setIshaAdhan(''); setIshaIqamah('');
+          setSunriseHour(''); setSunriseMin('');
+          setFajrAdhanHour(''); setFajrAdhanMin('');
+          setFajrIqamahHour(''); setFajrIqamahMin('');
+          setDhuhrAdhanHour(''); setDhuhrAdhanMin('');
+          setDhuhrIqamahHour(''); setDhuhrIqamahMin('');
+          setAsrAdhanHour(''); setAsrAdhanMin('');
+          setAsrIqamahHour(''); setAsrIqamahMin('');
+          setMaghribAdhanHour(''); setMaghribAdhanMin('');
+          setMaghribIqamahHour(''); setMaghribIqamahMin('');
+          setIshaAdhanHour(''); setIshaAdhanMin('');
+          setIshaIqamahHour(''); setIshaIqamahMin('');
         }
       }
 
@@ -242,30 +325,29 @@ export default function EditPrayersScreen() {
 
     // Validate and normalize all daily prayer times
     const timesToValidate = [
-      { val: sunrise, setter: setSunrise, label: 'Sunrise' },
-      { val: fajrAdhan, setter: setFajrAdhan, label: 'Fajr Adhan' },
-      { val: fajrIqamah, setter: setFajrIqamah, label: 'Fajr Iqamah' },
-      { val: dhuhrAdhan, setter: setDhuhrAdhan, label: 'Dhuhr Adhan' },
-      { val: dhuhrIqamah, setter: setDhuhrIqamah, label: 'Dhuhr Iqamah' },
-      { val: asrAdhan, setter: setAsrAdhan, label: 'Asr Adhan' },
-      { val: asrIqamah, setter: setAsrIqamah, label: 'Asr Iqamah' },
-      { val: maghribAdhan, setter: setMaghribAdhan, label: 'Maghrib Adhan' },
-      { val: maghribIqamah, setter: setMaghribIqamah, label: 'Maghrib Iqamah' },
-      { val: ishaAdhan, setter: setIshaAdhan, label: 'Isha Adhan' },
-      { val: ishaIqamah, setter: setIshaIqamah, label: 'Isha Iqamah' },
+      { hour: sunriseHour, min: sunriseMin, label: 'Sunrise' },
+      { hour: fajrAdhanHour, min: fajrAdhanMin, label: 'Fajr Adhan' },
+      { hour: fajrIqamahHour, min: fajrIqamahMin, label: 'Fajr Iqamah' },
+      { hour: dhuhrAdhanHour, min: dhuhrAdhanMin, label: 'Dhuhr Adhan' },
+      { hour: dhuhrIqamahHour, min: dhuhrIqamahMin, label: 'Dhuhr Iqamah' },
+      { hour: asrAdhanHour, min: asrAdhanMin, label: 'Asr Adhan' },
+      { hour: asrIqamahHour, min: asrIqamahMin, label: 'Asr Iqamah' },
+      { hour: maghribAdhanHour, min: maghribAdhanMin, label: 'Maghrib Adhan' },
+      { hour: maghribIqamahHour, min: maghribIqamahMin, label: 'Maghrib Iqamah' },
+      { hour: ishaAdhanHour, min: ishaAdhanMin, label: 'Isha Adhan' },
+      { hour: ishaIqamahHour, min: ishaIqamahMin, label: 'Isha Iqamah' },
     ];
 
     const normalized: { [key: string]: string } = {};
 
     for (const item of timesToValidate) {
-      const res = validateTime(item.val, item.label);
+      const combined = `${item.hour}:${item.min}`;
+      const res = validateTime(combined, item.label);
       if (!res.isValid) {
         Alert.alert('Validation Error', res.error);
         return;
       }
       normalized[item.label] = res.formatted;
-      // Update local state with the normalized value
-      item.setter(res.formatted);
     }
 
     setSaving(true);
@@ -350,6 +432,59 @@ export default function EditPrayersScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const updateJumuahSessionTime = (sessionNumber: number, field: 'khutbah' | 'iqamah', part: 'hour' | 'minute', val: string) => {
+    const updated = jumuahSessions.map(s => {
+      if (s.sessionNumber === sessionNumber) {
+        const parts = splitTime(s[field]);
+        parts[part] = val.replace(/[^0-9]/g, '').slice(0, 2);
+        return { ...s, [field]: `${parts.hour}:${parts.minute}` };
+      }
+      return s;
+    });
+    setJumuahSessions(updated);
+  };
+
+  const renderSplitTimeInput = (
+    hourVal: string,
+    setHourVal: (val: string) => void,
+    minVal: string,
+    setMinVal: (val: string) => void,
+    label: string
+  ) => {
+    return (
+      <View style={styles.inputBoxHalf}>
+        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{label}</Text>
+        <View style={styles.splitInputContainer}>
+          <TextInput 
+            style={[styles.splitInput, { backgroundColor: colors.inputBg, color: colors.text }]}
+            value={hourVal}
+            onChangeText={(val) => {
+              const cleaned = val.replace(/[^0-9]/g, '');
+              if (cleaned.length <= 2) setHourVal(cleaned);
+            }}
+            placeholder="HH"
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="numeric"
+            maxLength={2}
+          />
+          <Text style={[styles.fixedSeparator, { color: colors.text }]}>;</Text>
+          <TextInput 
+            style={[styles.splitInput, { backgroundColor: colors.inputBg, color: colors.text }]}
+            value={minVal}
+            onChangeText={(val) => {
+              const cleaned = val.replace(/[^0-9]/g, '');
+              if (cleaned.length <= 2) setMinVal(cleaned);
+            }}
+            placeholder="MM"
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="numeric"
+            maxLength={2}
+          />
+        </View>
+      </View>
+    );
   };
 
   const handleSaveProfile = async () => {
@@ -575,16 +710,23 @@ export default function EditPrayersScreen() {
           <>
             {/* Tab 1: Daily Prayers */}
             {activeTab === 'daily' && (
-              <View style={styles.formContainer}>
+              <View 
+                style={styles.formContainer}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
                 {/* Date Navigator */}
                 <View style={[styles.dateNavigator, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
                   <TouchableOpacity onPress={() => changeDate(-1)} style={styles.navBtn}>
                     <ChevronLeft size={20} color={colors.text} />
                   </TouchableOpacity>
-                  <View style={styles.dateInfo}>
+                  <TouchableOpacity 
+                    style={styles.dateInfo}
+                    onPress={() => setShowDatePicker(true)}
+                  >
                     <Calendar size={14} color={colors.primary} />
                     <Text style={[styles.dateLabel, { color: colors.text }]}>{displayDate}</Text>
-                  </View>
+                  </TouchableOpacity>
                   <TouchableOpacity onPress={() => changeDate(1)} style={styles.navBtn}>
                     <ChevronRight size={20} color={colors.text} />
                   </TouchableOpacity>
@@ -594,49 +736,41 @@ export default function EditPrayersScreen() {
                   <View style={[styles.formCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
                     <Text style={[styles.cardHeader, { color: colors.textSecondary }]}>Sunrise Time</Text>
                     <View style={styles.cardInputRow}>
-                      <View style={styles.inputBoxHalf}>
-                        <TextInput 
-                          style={[styles.textInput, { backgroundColor: colors.inputBg, color: colors.text }]}
-                          value={sunrise}
-                          onChangeText={setSunrise}
-                          placeholder="e.g. 05:48"
-                          placeholderTextColor={colors.textSecondary}
-                        />
-                      </View>
+                      {renderSplitTimeInput(
+                        sunriseHour,
+                        setSunriseHour,
+                        sunriseMin,
+                        setSunriseMin,
+                        'Sunrise'
+                      )}
                       <View style={styles.inputBoxHalf} />
                     </View>
                   </View>
 
                   {[
-                    { name: 'Fajr', adhan: fajrAdhan, setAdhan: setFajrAdhan, iqamah: fajrIqamah, setIqamah: setFajrIqamah },
-                    { name: 'Dhuhr', adhan: dhuhrAdhan, setAdhan: setDhuhrAdhan, iqamah: dhuhrIqamah, setIqamah: setDhuhrIqamah },
-                    { name: 'Asr', adhan: asrAdhan, setAdhan: setAsrAdhan, iqamah: asrIqamah, setIqamah: setAsrIqamah },
-                    { name: 'Maghrib', adhan: maghribAdhan, setAdhan: setMaghribAdhan, iqamah: maghribIqamah, setIqamah: setMaghribIqamah },
-                    { name: 'Isha', adhan: ishaAdhan, setAdhan: setIshaAdhan, iqamah: ishaIqamah, setIqamah: setIshaIqamah }
+                    { name: 'Fajr', adhanHour: fajrAdhanHour, setAdhanHour: setFajrAdhanHour, adhanMin: fajrAdhanMin, setAdhanMin: setFajrAdhanMin, iqamahHour: fajrIqamahHour, setIqamahHour: setFajrIqamahHour, iqamahMin: fajrIqamahMin, setIqamahMin: setFajrIqamahMin },
+                    { name: 'Dhuhr', adhanHour: dhuhrAdhanHour, setAdhanHour: setDhuhrAdhanHour, adhanMin: dhuhrAdhanMin, setAdhanMin: setDhuhrAdhanMin, iqamahHour: dhuhrIqamahHour, setIqamahHour: setDhuhrIqamahHour, iqamahMin: dhuhrIqamahMin, setIqamahMin: setDhuhrIqamahMin },
+                    { name: 'Asr', adhanHour: asrAdhanHour, setAdhanHour: setAsrAdhanHour, adhanMin: asrAdhanMin, setAdhanMin: setAsrAdhanMin, iqamahHour: asrIqamahHour, setIqamahHour: setAsrIqamahHour, iqamahMin: asrIqamahMin, setIqamahMin: setAsrIqamahMin },
+                    { name: 'Maghrib', adhanHour: maghribAdhanHour, setAdhanHour: setMaghribAdhanHour, adhanMin: maghribAdhanMin, setAdhanMin: setMaghribAdhanMin, iqamahHour: maghribIqamahHour, setIqamahHour: setMaghribIqamahHour, iqamahMin: maghribIqamahMin, setIqamahMin: setMaghribIqamahMin },
+                    { name: 'Isha', adhanHour: ishaAdhanHour, setAdhanHour: setIshaAdhanHour, adhanMin: ishaAdhanMin, setAdhanMin: setIshaAdhanMin, iqamahHour: ishaIqamahHour, setIqamahHour: setIshaIqamahHour, iqamahMin: ishaIqamahMin, setIqamahMin: setIshaIqamahMin }
                   ].map((prayer) => (
                     <View key={prayer.name} style={[styles.formCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
                       <Text style={[styles.cardHeader, { color: colors.text }]}>{prayer.name} Times</Text>
                       <View style={styles.cardInputRow}>
-                        <View style={styles.inputBoxHalf}>
-                          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Adhan (Call)</Text>
-                          <TextInput 
-                            style={[styles.textInput, { backgroundColor: colors.inputBg, color: colors.text }]}
-                            value={prayer.adhan}
-                            onChangeText={prayer.setAdhan}
-                            placeholder="e.g. 13:15"
-                            placeholderTextColor={colors.textSecondary}
-                          />
-                        </View>
-                        <View style={styles.inputBoxHalf}>
-                          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Iqamah (Salah)</Text>
-                          <TextInput 
-                            style={[styles.textInput, { backgroundColor: colors.inputBg, color: colors.text }]}
-                            value={prayer.iqamah}
-                            onChangeText={prayer.setIqamah}
-                            placeholder="e.g. 13:30"
-                            placeholderTextColor={colors.textSecondary}
-                          />
-                        </View>
+                        {renderSplitTimeInput(
+                          prayer.adhanHour,
+                          prayer.setAdhanHour,
+                          prayer.adhanMin,
+                          prayer.setAdhanMin,
+                          'Adhan (Call)'
+                        )}
+                        {renderSplitTimeInput(
+                          prayer.iqamahHour,
+                          prayer.setIqamahHour,
+                          prayer.iqamahMin,
+                          prayer.setIqamahMin,
+                          'Iqamah (Salah)'
+                        )}
                       </View>
                     </View>
                   ))}
@@ -667,39 +801,37 @@ export default function EditPrayersScreen() {
                     Define the sessions/batches for the Friday Jumuah Congregation prayers.
                   </Text>
 
-                  {jumuahSessions.map((session) => (
-                    <View key={session.sessionNumber} style={[styles.formCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-                      <View style={styles.cardHeaderRow}>
-                        <Text style={[styles.cardHeader, { color: colors.text }]}>Session {session.sessionNumber}</Text>
-                        <TouchableOpacity onPress={() => removeJumuahSession(session.sessionNumber)}>
-                          <Trash2 size={16} color="#f43f5e" />
-                        </TouchableOpacity>
-                      </View>
+                  {jumuahSessions.map((session) => {
+                    const khutbahParts = splitTime(session.khutbah);
+                    const iqamahParts = splitTime(session.iqamah);
+                    return (
+                      <View key={session.sessionNumber} style={[styles.formCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                        <View style={styles.cardHeaderRow}>
+                          <Text style={[styles.cardHeader, { color: colors.text }]}>Session {session.sessionNumber}</Text>
+                          <TouchableOpacity onPress={() => removeJumuahSession(session.sessionNumber)}>
+                            <Trash2 size={16} color="#f43f5e" />
+                          </TouchableOpacity>
+                        </View>
 
-                      <View style={styles.cardInputRow}>
-                        <View style={styles.inputBoxHalf}>
-                          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Khutbah (Sermon)</Text>
-                          <TextInput 
-                            style={[styles.textInput, { backgroundColor: colors.inputBg, color: colors.text }]}
-                            value={session.khutbah}
-                            onChangeText={(val) => updateJumuahSession(session.sessionNumber, 'khutbah', val)}
-                            placeholder="e.g. 13:00"
-                            placeholderTextColor={colors.textSecondary}
-                          />
-                        </View>
-                        <View style={styles.inputBoxHalf}>
-                          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Salah (Congregation)</Text>
-                          <TextInput 
-                            style={[styles.textInput, { backgroundColor: colors.inputBg, color: colors.text }]}
-                            value={session.iqamah}
-                            onChangeText={(val) => updateJumuahSession(session.sessionNumber, 'iqamah', val)}
-                            placeholder="e.g. 13:15"
-                            placeholderTextColor={colors.textSecondary}
-                          />
+                        <View style={styles.cardInputRow}>
+                          {renderSplitTimeInput(
+                            khutbahParts.hour,
+                            (val) => updateJumuahSessionTime(session.sessionNumber, 'khutbah', 'hour', val),
+                            khutbahParts.minute,
+                            (val) => updateJumuahSessionTime(session.sessionNumber, 'khutbah', 'minute', val),
+                            'Khutbah (Sermon)'
+                          )}
+                          {renderSplitTimeInput(
+                            iqamahParts.hour,
+                            (val) => updateJumuahSessionTime(session.sessionNumber, 'iqamah', 'hour', val),
+                            iqamahParts.minute,
+                            (val) => updateJumuahSessionTime(session.sessionNumber, 'iqamah', 'minute', val),
+                            'Salah (Congregation)'
+                          )}
                         </View>
                       </View>
-                    </View>
-                  ))}
+                    );
+                  })}
 
                   <TouchableOpacity 
                     style={[styles.addBtn, { borderColor: colors.primary }]}
@@ -726,6 +858,7 @@ export default function EditPrayersScreen() {
                 </View>
               </View>
             )}
+
 
             {/* Tab 3: Mosque Profile */}
             {activeTab === 'profile' && (
@@ -965,6 +1098,14 @@ export default function EditPrayersScreen() {
           </>
         )}
       </ScrollView>
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={onDateChange}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -1195,5 +1336,23 @@ const styles = StyleSheet.create({
   },
   emptyBoxText: {
     fontSize: 11,
-  }
+  },
+  splitInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  splitInput: {
+    width: 60,
+    height: 40,
+    borderRadius: 10,
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  fixedSeparator: {
+    fontSize: 18,
+    fontWeight: '900',
+    paddingHorizontal: 1,
+  },
 });
