@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -8,6 +8,7 @@ import {
   useColorScheme,
   Image
 } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { Megaphone, Calendar, Tag, AlertCircle } from 'lucide-react-native';
 
@@ -48,9 +49,11 @@ export default function AnnouncementsScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchNotices();
-  }, [followedMosqueId]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchNotices();
+    }, [followedMosqueId])
+  );
 
   const colors = {
     bg: isDark ? '#090f0d' : '#f4f7f6',
