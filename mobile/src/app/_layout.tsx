@@ -1,6 +1,7 @@
-import { Stack, DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { Stack } from 'expo-router';
 import { AuthProvider } from '@/context/AuthContext';
 import { useColorScheme } from 'react-native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
