@@ -9,7 +9,7 @@ import {
   RefreshControl,
   useColorScheme
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { getHijriDate, getNextPrayer, formatTimeRemaining, NextPrayerInfo } from '@/utils/prayerHelpers';
 import { Clock, MapPin, Sparkles, BookOpen, AlertCircle, ChevronRight } from 'lucide-react-native';
@@ -35,14 +35,33 @@ interface Mosque {
   jumuahSessions: Array<{ sessionNumber: number; khutbah: string; iqamah: string }>;
 }
 
+const DEFAULT_MOSQUE: Mosque = {
+  _id: '6a316567b9dfbc429c7ccc0b',
+  mosqueName: 'Colombo Grand Mosque',
+  city: 'Colombo',
+  jumuahSessions: [
+    { sessionNumber: 1, khutbah: '12:15 PM', iqamah: '12:30 PM' },
+    { sessionNumber: 2, khutbah: '01:15 PM', iqamah: '01:30 PM' }
+  ]
+};
+
+const DEFAULT_TIMETABLE: Timetable = {
+  sunrise: '05:54',
+  fajr: { adhan: '04:45', iqamah: '04:55' },
+  dhuhr: { adhan: '12:15', iqamah: '12:25' },
+  asr: { adhan: '15:45', iqamah: '15:55' },
+  maghrib: { adhan: '18:30', iqamah: '18:40' },
+  isha: { adhan: '19:45', iqamah: '19:55' }
+};
+
 export default function HomeDashboard() {
   const router = useRouter();
   const { followedMosqueId, apiUrl, isAuthenticated, user } = useAuth();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
 
-  const [mosque, setMosque] = useState<Mosque | null>(null);
-  const [timetable, setTimetable] = useState<Timetable | null>(null);
+  const [mosque, setMosque] = useState<Mosque | null>(DEFAULT_MOSQUE);
+  const [timetable, setTimetable] = useState<Timetable | null>(DEFAULT_TIMETABLE);
   const [nextPrayer, setNextPrayer] = useState<NextPrayerInfo | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -91,16 +110,18 @@ export default function HomeDashboard() {
     loadData();
   }, [followedMosqueId]);
 
-  useEffect(() => {
-    loadData();
-    setHijriDate(getHijriDate());
-    setGregorianDate(new Date().toLocaleDateString(undefined, { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    }));
-  }, [followedMosqueId]);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+      setHijriDate(getHijriDate());
+      setGregorianDate(new Date().toLocaleDateString(undefined, { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      }));
+    }, [followedMosqueId])
+  );
 
   // Live Countdown logic
   useEffect(() => {
