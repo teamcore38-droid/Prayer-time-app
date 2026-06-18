@@ -43,6 +43,11 @@ const DEFAULT_NOTIFICATIONS = {
   congregationUpdates: false,
 };
 
+const SAMPLE_SEAT_INFO = {
+  available: 124,
+  capacity: 180,
+};
+
 export default function HomePage() {
   const [mosqueName, setMosqueName] = useState('Masjid Al-Falah');
   const [city, setCity] = useState('Kuala Lumpur');
@@ -51,6 +56,7 @@ export default function HomePage() {
   const [nextPrayer, setNextPrayer] = useState<any>(null);
   const [announcements, setAnnouncements] = useState(SAMPLE_ANNOUNCEMENTS);
   const [notifications, setNotifications] = useState(DEFAULT_NOTIFICATIONS);
+  const [seatInfo] = useState(SAMPLE_SEAT_INFO);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -153,6 +159,17 @@ export default function HomePage() {
                     <h2 className="mt-2 text-2xl font-black">{city}</h2>
                   </div>
                   <span className="rounded-2xl bg-slate-800/90 px-3 py-2 text-xs uppercase tracking-[0.22em] text-slate-300">Live</span>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-[24px] bg-white/5 p-4 text-sm text-slate-200">
+                  <div>
+                    <p className="text-[9px] uppercase tracking-[0.28em] text-slate-400">Seats available</p>
+                    <p className="mt-1 text-lg font-black">{seatInfo.available}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] uppercase tracking-[0.28em] text-slate-400">Capacity</p>
+                    <p className="mt-1 text-lg font-black">{seatInfo.capacity}</p>
+                  </div>
                 </div>
 
                 <div className="mt-6 rounded-[28px] bg-white/5 p-5">
