@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
   const router = useRouter();
-  useEffect(() => { router.replace('/dashboard'); }, [router]);
+  useEffect(() => { router.replace('/home'); }, [router]);
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
