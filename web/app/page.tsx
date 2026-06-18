@@ -2,62 +2,25 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Clock, Megaphone, Sparkles, Smartphone, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 import { getHijriDate, getNextPrayer, formatTimeRemaining } from '../lib/prayerHelpers';
 
 export default function LandingPage() {
-  const [mosqueName, setMosqueName] = useState('Masjid Al-Falah');
-  const [city, setCity] = useState('Kuala Lumpur');
-  const [timetable, setTimetable] = useState<any>({
-    sunrise: '05:54',
-    fajr: { adhan: '04:45', iqamah: '04:55' },
-    dhuhr: { adhan: '12:15', iqamah: '12:25' },
-    asr: { adhan: '15:45', iqamah: '15:55' },
-    maghrib: { adhan: '18:30', iqamah: '18:40' },
-    isha: { adhan: '19:45', iqamah: '19:55' }
-  });
-  const [nextPrayer, setNextPrayer] = useState<any>(null);
-  const [hijriDate, setHijriDate] = useState('');
-
+  const router = useRouter();
+  // Redirect root to dashboard to show prayer dashboard as initial page
   useEffect(() => {
-    setHijriDate(getHijriDate());
-    const load = async () => {
-      try {
-        const mRes = await fetch('/api/mosques');
-        if (mRes.ok) {
-          const mos = await mRes.json();
-          if (Array.isArray(mos) && mos.length) {
-            setMosqueName(mos[0].mosqueName || mosqueName);
-            setCity(mos[0].city || city);
-          }
-        }
-        const today = new Date().toISOString().split('T')[0];
-        const pRes = await fetch(`/api/prayers?date=${today}`);
-        if (pRes.ok) {
-          const prs = await pRes.json();
-          if (Array.isArray(prs) && prs.length) setTimetable(prs[0]);
-        }
-      } catch (e) {
-        console.warn('Failed to load mosque/prayers', e);
-      }
-    };
-    load();
-  }, []);
-
-  useEffect(() => {
-    const update = () => {
-      if (timetable) {
-        const info = getNextPrayer(timetable);
-        setNextPrayer(info);
-      }
-    };
-    update();
-    const iv = setInterval(update, 1000);
-    return () => clearInterval(iv);
-  }, [timetable]);
+    router.replace('/dashboard');
+  }, [router]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans transition-colors duration-300">
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="inline-block w-10 h-10 rounded-full border-4 border-emerald-600 animate-spin" />
+        <p className="mt-4 text-sm text-slate-600">Redirecting to prayer dashboard…</p>
+      </div>
+    </div>
+  );
       
       {/* Navigation Header */}
       <header className="h-20 border-b border-slate-200 dark:border-slate-900 bg-white/80 dark:bg-slate-950/80 sticky top-0 z-50 backdrop-blur-md">
