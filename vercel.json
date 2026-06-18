@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "installCommand": "if [ -f package.json ]; then npm install --no-audit --no-fund; elif [ -f web/package.json ]; then (cd web && npm install --no-audit --no-fund); else echo 'package.json not found' && exit 1; fi",
-  "buildCommand": "if [ -f package.json ]; then npm run build; elif [ -f web/package.json ]; then (cd web && npm run build); else echo 'package.json not found' && exit 1; fi",
-  "outputDirectory": "web/.next",
+  "installCommand": "cd web && npm install --no-audit --no-fund",
+  "buildCommand": "cd web && npm run build",
+  "outputDirectory": ".next",
   "framework": "nextjs"
 }
