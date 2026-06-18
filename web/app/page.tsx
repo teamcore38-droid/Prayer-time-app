@@ -1,10 +1,61 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Clock, Megaphone, Sparkles, Smartphone, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { getHijriDate, getNextPrayer, formatTimeRemaining } from '../lib/prayerHelpers';
 
 export default function LandingPage() {
+  const [mosqueName, setMosqueName] = useState('Masjid Al-Falah');
+  const [city, setCity] = useState('Kuala Lumpur');
+  const [timetable, setTimetable] = useState<any>({
+    sunrise: '05:54',
+    fajr: { adhan: '04:45', iqamah: '04:55' },
+    dhuhr: { adhan: '12:15', iqamah: '12:25' },
+    asr: { adhan: '15:45', iqamah: '15:55' },
+    maghrib: { adhan: '18:30', iqamah: '18:40' },
+    isha: { adhan: '19:45', iqamah: '19:55' }
+  });
+  const [nextPrayer, setNextPrayer] = useState<any>(null);
+  const [hijriDate, setHijriDate] = useState('');
+
+  useEffect(() => {
+    setHijriDate(getHijriDate());
+    const load = async () => {
+      try {
+        const mRes = await fetch('/api/mosques');
+        if (mRes.ok) {
+          const mos = await mRes.json();
+          if (Array.isArray(mos) && mos.length) {
+            setMosqueName(mos[0].mosqueName || mosqueName);
+            setCity(mos[0].city || city);
+          }
+        }
+        const today = new Date().toISOString().split('T')[0];
+        const pRes = await fetch(`/api/prayers?date=${today}`);
+        if (pRes.ok) {
+          const prs = await pRes.json();
+          if (Array.isArray(prs) && prs.length) setTimetable(prs[0]);
+        }
+      } catch (e) {
+        console.warn('Failed to load mosque/prayers', e);
+      }
+    };
+    load();
+  }, []);
+
+  useEffect(() => {
+    const update = () => {
+      if (timetable) {
+        const info = getNextPrayer(timetable);
+        setNextPrayer(info);
+      }
+    };
+    update();
+    const iv = setInterval(update, 1000);
+    return () => clearInterval(iv);
+  }, [timetable]);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans transition-colors duration-300">
       
@@ -72,57 +123,49 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right Column: Visual Mockup */}
+          {/* Right Column: Visual Mockup (dynamic from API) */}
           <div className="relative flex justify-center">
-            {/* Elegant Islamic geometry frame placeholder */}
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-full blur-2xl"></div>
             <div className="w-72 h-[500px] border border-slate-200 dark:border-slate-800 rounded-[40px] bg-slate-950 p-3 shadow-2xl relative">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 h-6 bg-slate-950 rounded-b-2xl z-20"></div>
-              
-              {/* App Screen Emulator Mock */}
               <div className="w-full h-full bg-[#0a0f0d] rounded-[32px] overflow-hidden p-4 flex flex-col justify-between text-white relative">
-                {/* Header pattern overlay */}
                 <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-emerald-950/80 to-transparent z-0 opacity-40"></div>
-                
                 <div className="relative z-10 space-y-4 pt-4">
                   <div className="flex justify-between items-center text-[10px]">
                     <div>
-                      <h4 className="font-black text-emerald-400">Masjid Al-Falah</h4>
-                      <p className="text-slate-400">Kuala Lumpur</p>
+                      <h4 className="font-black text-emerald-400">{mosqueName}</h4>
+                      <p className="text-slate-400">{city}</p>
                     </div>
-                    <span className="text-slate-400">14 Ramadan 1447</span>
+                    <span className="text-slate-400">{hijriDate}</span>
                   </div>
 
                   {/* Next Prayer Display */}
-                  <div className="p-3 bg-emerald-950/60 border border-emerald-900/50 rounded-2xl text-center space-y-1">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400">Next Prayer Adhan</span>
-                    <h3 className="text-xl font-bold">Maghrib in 14m</h3>
-                    <p className="text-[10px] text-slate-400">Adhan 18:22 / Iqamah 18:27</p>
-                  </div>
+                  {nextPrayer ? (
+                    <div className="p-3 bg-emerald-950/60 border border-emerald-900/50 rounded-2xl text-center space-y-1">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400">Next Prayer {nextPrayer.type}</span>
+                      <h3 className="text-xl font-bold">{nextPrayer.name} in {formatTimeRemaining(nextPrayer.secondsRemaining)}</h3>
+                      <p className="text-[10px] text-slate-400">Adhan {nextPrayer.time}</p>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-emerald-950/20 rounded-2xl text-center">
+                      <span className="text-[10px] text-slate-400">No upcoming prayers</span>
+                    </div>
+                  )}
 
                   {/* Upcoming prayer card snippet */}
                   <div className="space-y-1.5">
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Today Schedules</span>
                     <div className="space-y-1">
-                      <div className="flex justify-between items-center p-2 bg-slate-900/60 rounded-xl text-xs">
-                        <span className="font-semibold text-emerald-400">Fajr</span>
-                        <span className="text-[10px] text-slate-400">05:10</span>
-                        <span className="font-semibold">05:30</span>
-                      </div>
-                      <div className="flex justify-between items-center p-2 bg-slate-900/60 rounded-xl text-xs">
-                        <span className="font-semibold text-emerald-400">Dhuhr</span>
-                        <span className="text-[10px] text-slate-400">12:15</span>
-                        <span className="font-semibold">12:30</span>
-                      </div>
-                      <div className="flex justify-between items-center p-2 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-xs">
-                        <span className="font-semibold text-emerald-300">Maghrib</span>
-                        <span className="text-[10px] text-emerald-200">18:22</span>
-                        <span className="font-semibold">18:27</span>
-                      </div>
+                      {['fajr','dhuhr','asr','maghrib','isha'].map((p) => (
+                        <div key={p} className={`flex justify-between items-center p-2 ${nextPrayer?.name?.toLowerCase()===p ? 'bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-xs' : 'bg-slate-900/60 rounded-xl text-xs'}`}>
+                          <span className="font-semibold text-emerald-400">{p.charAt(0).toUpperCase()+p.slice(1)}</span>
+                          <span className="text-[10px] text-slate-400">{timetable?.[p]?.adhan || '—'}</span>
+                          <span className="font-semibold">{timetable?.[p]?.iqamah || '—'}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
-
                 <div className="relative z-10 pt-4 border-t border-slate-900 text-center">
                   <span className="text-[8px] text-slate-500">Android Home Widget Support Built-in</span>
                 </div>
