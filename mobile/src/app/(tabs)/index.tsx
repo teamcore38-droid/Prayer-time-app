@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
-  SafeAreaView, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
   RefreshControl,
   useColorScheme
 } from 'react-native';
@@ -134,11 +134,11 @@ export default function HomeDashboard() {
     useCallback(() => {
       loadData();
       setHijriDate(getHijriDate());
-      setGregorianDate(new Date().toLocaleDateString(undefined, { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+      setGregorianDate(new Date().toLocaleDateString(undefined, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       }));
     }, [followedMosqueId])
   );
@@ -166,8 +166,9 @@ export default function HomeDashboard() {
     textSecondary: isDark ? '#94a3b8' : '#64748b',
     primary: isDark ? '#10b981' : '#064e3b',
     accent: isDark ? '#fbbf24' : '#d97706',
-    border: isDark ? '#1b2c27' : '#e2e8f0',
-    highlight: isDark ? '#064e3b' : '#d1fae5',
+    border: isDark ? '#1b2c27' : '#e8eded',
+    divider: isDark ? '#1b2c27' : '#eef2f1',
+    highlight: isDark ? '#0c2c22' : '#e7f6ef',
   };
 
   if (loading) {
@@ -188,7 +189,7 @@ export default function HomeDashboard() {
           <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
             Follow a mosque in your community to view local prayer times, iqamah schedules, and center announcements.
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.btn, { backgroundColor: colors.primary }]}
             onPress={() => router.push('/settings')}
           >
@@ -201,44 +202,47 @@ export default function HomeDashboard() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
-        {/* Header Block */}
+        {/* Open Header — no surrounding box, sits directly on the page */}
         {mosque && (
-          <TouchableOpacity 
-            style={[styles.headerCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+          <TouchableOpacity
+            style={styles.header}
+            activeOpacity={0.7}
             onPress={() => router.push({ pathname: '/mosque-info' })}
           >
             <View style={styles.headerInfo}>
               <View style={styles.mosqueBadge}>
-                <MapPin size={14} color={colors.primary} />
+                <MapPin size={15} color={colors.primary} />
                 <Text style={[styles.mosqueLabel, { color: colors.primary }]}>{mosque.city}</Text>
               </View>
               <Text style={[styles.mosqueName, { color: colors.text }]}>{mosque.mosqueName}</Text>
               <Text style={[styles.dateText, { color: colors.textSecondary }]}>{gregorianDate}</Text>
               <Text style={[styles.hijriText, { color: colors.accent }]}>{hijriDate}</Text>
             </View>
-            <ChevronRight size={18} color={colors.textSecondary} />
+            <ChevronRight size={22} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
 
-        {/* Live Countdown Widget */}
+        {/* Live Countdown — the single hero card */}
         {nextPrayer ? (
           <View style={[styles.countdownCard, { backgroundColor: colors.primary }]}>
-            <Text style={styles.countdownTitle}>
-              Next Event: <Text style={{ fontWeight: '900' }}>{nextPrayer.name} {nextPrayer.type}</Text>
+            <Text style={styles.countdownTitle}>NEXT PRAYER</Text>
+            <Text style={styles.countdownName}>
+              {nextPrayer.name} {nextPrayer.type}
             </Text>
             <Text style={styles.countdownTimer}>
               {formatTimeRemaining(nextPrayer.secondsRemaining)}
             </Text>
             <View style={styles.countdownDetails}>
-              <Clock size={12} color="#ffffff" opacity={0.8} />
+              <Clock size={13} color="#ffffff" />
               <Text style={styles.countdownDetailText}>
-                Scheduled for {nextPrayer.time}
+                Scheduled at {nextPrayer.time}
               </Text>
             </View>
           </View>
@@ -253,7 +257,7 @@ export default function HomeDashboard() {
 
         {/* Admin Edit Button */}
         {isAuthenticated && (user?.role === 'mosque_admin' || user?.role === 'super_admin') && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.adminEditCard, { borderColor: colors.primary }]}
             onPress={() => router.push('/edit-prayers')}
           >
@@ -264,18 +268,18 @@ export default function HomeDashboard() {
           </TouchableOpacity>
         )}
 
-        {/* Timetable Section */}
+        {/* Timetable — one card, flat full-width rows divided by thin lines */}
         {timetable && (
-          <View style={[styles.section, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-            <View style={styles.sectionHeader}>
-              <Clock size={16} color={colors.primary} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Today Prayer Times</Text>
+          <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <View style={styles.cardHeader}>
+              <Clock size={17} color={colors.primary} />
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Today&apos;s Prayer Times</Text>
             </View>
 
             <View style={styles.timetableHeaders}>
-              <Text style={[styles.tableCol, styles.colName, { color: colors.textSecondary }]}>Salah</Text>
-              <Text style={[styles.tableCol, styles.colTime, { color: colors.textSecondary }]}>Adhan</Text>
-              <Text style={[styles.tableCol, styles.colTime, { color: colors.textSecondary }]}>Iqamah</Text>
+              <Text style={[styles.colName, styles.headerLabel, { color: colors.textSecondary }]}>Salah</Text>
+              <Text style={[styles.colTime, styles.headerLabel, { color: colors.textSecondary }]}>Adhan</Text>
+              <Text style={[styles.colTime, styles.headerLabel, { color: colors.textSecondary }]}>Iqamah</Text>
             </View>
 
             {/* Timetable Rows */}
@@ -285,24 +289,26 @@ export default function HomeDashboard() {
               { name: 'Asr', times: timetable.asr },
               { name: 'Maghrib', times: timetable.maghrib },
               { name: 'Isha', times: timetable.isha }
-            ].map((prayer) => {
+            ].map((prayer, index, arr) => {
               const isNext = nextPrayer?.name === prayer.name;
+              const isLast = index === arr.length - 1;
               return (
-                <View 
-                  key={prayer.name} 
+                <View
+                  key={prayer.name}
                   style={[
-                    styles.tableRow, 
-                    { borderBottomColor: colors.border },
-                    isNext && [styles.rowHighlight, { backgroundColor: colors.highlight, borderColor: colors.primary }]
+                    styles.tableRow,
+                    !isLast && { borderBottomWidth: 1, borderBottomColor: colors.divider },
+                    isNext && [styles.rowHighlight, { backgroundColor: colors.highlight }]
                   ]}
                 >
-                  <Text style={[styles.tableCol, styles.colName, styles.prayerName, { color: colors.text }]}>
+                  <Text style={[styles.colName, styles.prayerName, { color: colors.text }]}>
                     {prayer.name}
+                    {isNext && <Text style={[styles.nextTag, { color: colors.primary }]}>  • Next</Text>}
                   </Text>
-                  <Text style={[styles.tableCol, styles.colTime, { color: colors.text }]}>
+                  <Text style={[styles.colTime, styles.cellText, { color: colors.textSecondary }]}>
                     {prayer.times.adhan}
                   </Text>
-                  <Text style={[styles.tableCol, styles.colTime, styles.iqamahTime, { color: colors.primary }]}>
+                  <Text style={[styles.colTime, styles.iqamahTime, { color: colors.primary }]}>
                     {prayer.times.iqamah}
                   </Text>
                 </View>
@@ -311,31 +317,38 @@ export default function HomeDashboard() {
 
             <View style={styles.sunriseRow}>
               <Text style={[styles.sunriseText, { color: colors.textSecondary }]}>
-                Sunrise: <Text style={{ color: colors.text, fontWeight: '700' }}>{timetable.sunrise}</Text>
+                Sunrise <Text style={{ color: colors.text, fontWeight: '700' }}>{timetable.sunrise}</Text>
               </Text>
             </View>
           </View>
         )}
 
-        {/* Friday Jumuah Congregation */}
+        {/* Friday Jumuah — flat rows, no inner boxes */}
         {mosque && mosque.jumuahSessions && mosque.jumuahSessions.length > 0 && (
-          <View style={[styles.section, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-            <View style={styles.sectionHeader}>
-              <Sparkles size={16} color={colors.accent} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Friday Jumuah Sessions</Text>
+          <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <View style={styles.cardHeader}>
+              <Sparkles size={17} color={colors.accent} />
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Friday Jumuah Sessions</Text>
             </View>
 
-            <View style={styles.jumuahGrid}>
-              {mosque.jumuahSessions.map((session) => (
-                <View key={session.sessionNumber} style={[styles.jumuahCard, { borderColor: colors.border }]}>
+            {mosque.jumuahSessions.map((session, index, arr) => {
+              const isLast = index === arr.length - 1;
+              return (
+                <View
+                  key={session.sessionNumber}
+                  style={[
+                    styles.jumuahRow,
+                    !isLast && { borderBottomWidth: 1, borderBottomColor: colors.divider }
+                  ]}
+                >
                   <Text style={[styles.jumuahNumber, { color: colors.primary }]}>Session {session.sessionNumber}</Text>
                   <View style={styles.jumuahTimes}>
-                    <Text style={[styles.jumuahLabel, { color: colors.textSecondary }]}>Khutbah: <Text style={{ color: colors.text, fontWeight: '600' }}>{session.khutbah}</Text></Text>
-                    <Text style={[styles.jumuahLabel, { color: colors.textSecondary }]}>Salah: <Text style={{ color: colors.primary, fontWeight: '700' }}>{session.iqamah}</Text></Text>
+                    <Text style={[styles.jumuahLabel, { color: colors.textSecondary }]}>Khutbah <Text style={{ color: colors.text, fontWeight: '700' }}>{session.khutbah}</Text></Text>
+                    <Text style={[styles.jumuahLabel, { color: colors.textSecondary }]}>Salah <Text style={{ color: colors.primary, fontWeight: '700' }}>{session.iqamah}</Text></Text>
                   </View>
                 </View>
-              ))}
-            </View>
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -348,8 +361,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    gap: 20,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 32,
+    gap: 18,
   },
   center: {
     flex: 1,
@@ -394,126 +409,146 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  headerCard: {
-    padding: 20,
-    borderRadius: 20,
-    borderWidth: 1,
+
+  /* Open header (no box) */
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    paddingTop: 4,
   },
   headerInfo: {
-    gap: 4,
+    gap: 6,
     flex: 1,
   },
   mosqueBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     alignSelf: 'flex-start',
   },
   mosqueLabel: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '800',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   mosqueName: {
-    fontSize: 18,
+    fontSize: 26,
     fontWeight: '900',
     letterSpacing: -0.5,
+    lineHeight: 30,
   },
   dateText: {
-    fontSize: 11,
+    fontSize: 13,
   },
   hijriText: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '800',
   },
+
+  /* Hero countdown card */
   countdownCard: {
-    padding: 24,
-    borderRadius: 24,
+    paddingVertical: 30,
+    paddingHorizontal: 24,
+    borderRadius: 26,
     alignItems: 'center',
     gap: 8,
     shadowColor: '#064e3b',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
     elevation: 8,
   },
   countdownTitle: {
     color: '#ffffff',
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    opacity: 0.9,
+    letterSpacing: 2,
+    opacity: 0.85,
+  },
+  countdownName: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '800',
   },
   countdownTimer: {
     color: '#ffffff',
-    fontSize: 42,
+    fontSize: 54,
     fontWeight: '900',
-    letterSpacing: -1,
+    letterSpacing: -1.5,
+    lineHeight: 60,
   },
   countdownDetails: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
+    marginTop: 2,
   },
   countdownDetailText: {
     color: '#ffffff',
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '600',
-    opacity: 0.8,
+    opacity: 0.9,
   },
   errorCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
+    padding: 18,
+    borderRadius: 18,
     borderWidth: 1,
     gap: 10,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     flex: 1,
   },
-  section: {
-    borderRadius: 20,
+
+  /* Generic section card — one level only */
+  card: {
+    borderRadius: 22,
     borderWidth: 1,
-    padding: 20,
-    gap: 16,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 8,
+    gap: 4,
   },
-  sectionHeader: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 9,
+    marginBottom: 6,
   },
-  sectionTitle: {
-    fontSize: 14,
+  cardTitle: {
+    fontSize: 16,
     fontWeight: '900',
+    letterSpacing: -0.3,
   },
+
+  /* Timetable */
   timetableHeaders: {
     flexDirection: 'row',
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'transparent',
+    paddingBottom: 10,
+  },
+  headerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingVertical: 16,
     alignItems: 'center',
   },
   rowHighlight: {
-    borderRadius: 12,
-    borderWidth: 1.5,
-    paddingHorizontal: 10,
-    marginHorizontal: -10,
-    shadowOpacity: 0.05,
-    elevation: 1,
-  },
-  tableCol: {
-    fontSize: 13,
+    borderRadius: 14,
+    borderBottomWidth: 0,
+    paddingHorizontal: 12,
+    marginHorizontal: -12,
   },
   colName: {
     flex: 2,
@@ -522,51 +557,59 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
   },
+  cellText: {
+    fontSize: 15,
+  },
   prayerName: {
+    fontSize: 16,
     fontWeight: '700',
   },
+  nextTag: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
   iqamahTime: {
+    fontSize: 15,
     fontWeight: '800',
   },
   sunriseRow: {
     alignItems: 'flex-end',
-    paddingTop: 4,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   sunriseText: {
-    fontSize: 11,
+    fontSize: 12,
   },
-  jumuahGrid: {
-    gap: 10,
-  },
-  jumuahCard: {
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 12,
+
+  /* Jumuah */
+  jumuahRow: {
+    paddingVertical: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   jumuahNumber: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '800',
   },
   jumuahTimes: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 16,
   },
   jumuahLabel: {
-    fontSize: 11,
+    fontSize: 13,
   },
+
+  /* Admin */
   adminEditCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    padding: 14,
+    padding: 15,
     borderRadius: 16,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    marginTop: 4,
   },
   adminEditText: {
     fontSize: 13,

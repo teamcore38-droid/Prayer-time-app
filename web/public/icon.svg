@@ -1,0 +1,7 @@
+<!-- Simple single-source SVG for icon generation. Edit colors to match your brand. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="100%" height="100%" rx="64" fill="#064e3b" />
+  <g fill="#fff" transform="translate(64,64) scale(0.6)">
+    <path d="M160 0 L200 120 H120 Z" />
+  </g>
+</svg>
