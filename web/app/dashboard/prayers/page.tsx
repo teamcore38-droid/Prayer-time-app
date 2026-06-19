@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { validateTime } from '../../../lib/validate';
 import { Clock, Calendar, Check, AlertCircle, Sparkles } from 'lucide-react';
 
 interface TimePair {
@@ -35,6 +36,10 @@ export default function PrayersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
+
+  // In-memory cache for quick UI updates (keyed by `${mosqueId}:${date}`)
+  const [dailyCache, setDailyCache] = useState<Record<string, any>>({});
+  const [dailyLoading, setDailyLoading] = useState(false);
 
   // Form Fields
   const [sunrise, setSunrise] = useState('06:00');
@@ -91,37 +96,58 @@ export default function PrayersPage() {
   useEffect(() => {
     if (!selectedMosqueId) return;
 
+    const applyTimetable = (row: any) => {
+    if (row) {
+      setSunrise(row.sunrise || '06:00');
+      setFajrAdhan(row.fajr?.adhan || '05:10');
+      setFajrIqamah(row.fajr?.iqamah || '05:30');
+      setDhuhrAdhan(row.dhuhr?.adhan || '12:15');
+      setDhuhrIqamah(row.dhuhr?.iqamah || '12:30');
+      setAsrAdhan(row.asr?.adhan || '15:45');
+      setAsrIqamah(row.asr?.iqamah || '16:00');
+      setMaghribAdhan(row.maghrib?.adhan || '18:22');
+      setMaghribIqamah(row.maghrib?.iqamah || '18:27');
+      setIshaAdhan(row.isha?.adhan || '19:40');
+      setIshaIqamah(row.isha?.iqamah || '20:00');
+    } else {
+      setSunrise('06:00');
+      setFajrAdhan('05:10'); setFajrIqamah('05:30');
+      setDhuhrAdhan('12:15'); setDhuhrIqamah('12:30');
+      setAsrAdhan('15:45'); setAsrIqamah('16:00');
+      setMaghribAdhan('18:22'); setMaghribIqamah('18:27');
+      setIshaAdhan('19:40'); setIshaIqamah('20:00');
+    }
+    };
+
     const fetchPrayerForDate = async () => {
-      try {
-        const res = await fetch(`/api/prayers?mosqueId=${selectedMosqueId}&date=${selectedDate}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.length > 0) {
-            const row = data[0];
-            setSunrise(row.sunrise);
-            setFajrAdhan(row.fajr.adhan);
-            setFajrIqamah(row.fajr.iqamah);
-            setDhuhrAdhan(row.dhuhr.adhan);
-            setDhuhrIqamah(row.dhuhr.iqamah);
-            setAsrAdhan(row.asr.adhan);
-            setAsrIqamah(row.asr.iqamah);
-            setMaghribAdhan(row.maghrib.adhan);
-            setMaghribIqamah(row.maghrib.iqamah);
-            setIshaAdhan(row.isha.adhan);
-            setIshaIqamah(row.isha.iqamah);
-          } else {
-            // Reset to default placeholders
-            setSunrise('06:00');
-            setFajrAdhan('05:10'); setFajrIqamah('05:30');
-            setDhuhrAdhan('12:15'); setDhuhrIqamah('12:30');
-            setAsrAdhan('15:45'); setAsrIqamah('16:00');
-            setMaghribAdhan('18:22'); setMaghribIqamah('18:27');
-            setIshaAdhan('19:40'); setIshaIqamah('20:00');
-          }
-        }
-      } catch (err) {
-        console.error(err);
+    if (!selectedMosqueId) return;
+    const key = `${selectedMosqueId}:${selectedDate}`;
+
+    // Quick UI update from in-memory cache
+    if (dailyCache[key]) {
+      applyTimetable(dailyCache[key]);
+    }
+
+    setDailyLoading(true);
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(`/api/prayers?mosqueId=${selectedMosqueId}&date=${selectedDate}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
+        const row = data && data.length > 0 ? data[0] : null;
+        setDailyCache(prev => ({ ...prev, [key]: row }));
+        applyTimetable(row);
+      } else {
+        if (!dailyCache[key]) applyTimetable(null);
       }
+    } catch (err) {
+      console.error('fetchPrayerForDate failed', err);
+      if (!dailyCache[key]) applyTimetable(null);
+    } finally {
+      setDailyLoading(false);
+    }
     };
 
     const fetchUpcomingPrayers = async () => {
@@ -146,6 +172,30 @@ export default function PrayersPage() {
     setSaving(true);
     setStatusMessage({ type: '', text: '' });
     const token = localStorage.getItem('token');
+
+    // Validate times before sending to API
+    const toValidate = [
+      { val: sunrise, label: 'Sunrise' },
+      { val: fajrAdhan, label: 'Fajr Adhan' },
+      { val: fajrIqamah, label: 'Fajr Iqamah' },
+      { val: dhuhrAdhan, label: 'Dhuhr Adhan' },
+      { val: dhuhrIqamah, label: 'Dhuhr Iqamah' },
+      { val: asrAdhan, label: 'Asr Adhan' },
+      { val: asrIqamah, label: 'Asr Iqamah' },
+      { val: maghribAdhan, label: 'Maghrib Adhan' },
+      { val: maghribIqamah, label: 'Maghrib Iqamah' },
+      { val: ishaAdhan, label: 'Isha Adhan' },
+      { val: ishaIqamah, label: 'Isha Iqamah' },
+    ];
+
+    for (const item of toValidate) {
+      const res = validateTime(item.val, item.label);
+      if (!res.isValid) {
+        setSaving(false);
+        setStatusMessage({ type: 'error', text: res.error || `${item.label} is invalid` });
+        return;
+      }
+    }
 
     const payload = {
       mosqueId: selectedMosqueId,

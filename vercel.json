@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "installCommand": "if [ -f web/package.json ]; then (cd web && npm install --no-audit --no-fund); elif [ -f package.json ]; then npm install --no-audit --no-fund; else echo 'package.json not found' && exit 1; fi",
+  "buildCommand": "if [ -f web/package.json ]; then (cd web && npm run build); elif [ -f package.json ]; then npm run build; else echo 'package.json not found' && exit 1; fi; if [ -d web/.next ]; then rm -rf .next && cp -R web/.next .next || true; fi",
+  "outputDirectory": ".next",
+  "framework": "nextjs"
+}
