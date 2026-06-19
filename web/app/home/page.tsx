@@ -59,6 +59,22 @@ export default function HomePage() {
   const [seatInfo] = useState(SAMPLE_SEAT_INFO);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [canInstall, setCanInstall] = useState(false);
+
+  useEffect(() => {
+    const checkInstallable = () => {
+      if ((window as any).pwaInstallable) {
+        setCanInstall(true);
+      }
+    };
+    checkInstallable();
+    window.addEventListener('pwa-state-change', checkInstallable);
+    return () => window.removeEventListener('pwa-state-change', checkInstallable);
+  }, []);
+
+  const triggerInstallPrompt = () => {
+    window.dispatchEvent(new CustomEvent('trigger-pwa-install'));
+  };
 
   useEffect(() => {
     setHijriDate(getHijriDate());
@@ -141,7 +157,18 @@ export default function HomePage() {
           <section className="rounded-[28px] border border-slate-200/80 bg-white/90 dark:border-slate-800/80 dark:bg-slate-950/95 shadow-xl shadow-slate-900/5 p-3.5 sm:p-6">
             <div className="flex items-start justify-between gap-4 px-1 sm:px-0">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-emerald-600">Prayer Home</p>
+                <div className="flex items-center gap-3">
+                  <p className="text-xs uppercase tracking-[0.24em] text-emerald-600">Prayer Home</p>
+                  {canInstall && (
+                    <button
+                      onClick={triggerInstallPrompt}
+                      className="px-2.5 py-0.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-bold uppercase tracking-wider transition cursor-pointer"
+                      type="button"
+                    >
+                      Install App
+                    </button>
+                  )}
+                </div>
                 <h1 className="mt-2 text-2xl sm:text-3xl font-black tracking-tight">Masjid Connect</h1>
                 <p className="mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Updated live with prayer times, announcements, and notification settings for your community.</p>
               </div>
