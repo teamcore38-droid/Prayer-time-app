@@ -136,124 +136,132 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-2 sm:px-4 py-4">
         <div className="max-w-3xl mx-auto space-y-5">
-          <section className="rounded-[28px] border border-slate-200/80 bg-white/90 dark:border-slate-800/80 dark:bg-slate-950/95 shadow-xl shadow-slate-900/5 p-5">
-            <div className="flex items-start justify-between gap-4">
+          <section className="rounded-[28px] border border-slate-200/80 bg-white/90 dark:border-slate-800/80 dark:bg-slate-950/95 shadow-xl shadow-slate-900/5 p-3.5 sm:p-6">
+            <div className="flex items-start justify-between gap-4 px-1 sm:px-0">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-emerald-600">Prayer Home</p>
-                <h1 className="mt-2 text-3xl font-black tracking-tight">Masjid Connect</h1>
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Updated live with prayer times, announcements, and notification settings for your community.</p>
+                <h1 className="mt-2 text-2xl sm:text-3xl font-black tracking-tight">Masjid Connect</h1>
+                <p className="mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Updated live with prayer times, announcements, and notification settings for your community.</p>
               </div>
-              <div className="rounded-3xl bg-emerald-600/10 px-4 py-3 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-                <p className="text-xs uppercase tracking-[0.2em] font-semibold">{hijriDate}</p>
-                <p className="mt-2 text-right text-sm font-semibold text-slate-700 dark:text-slate-100">{new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })}</p>
+              <div className="rounded-2xl bg-emerald-600/10 px-3.5 py-2.5 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300 shrink-0">
+                <p className="text-[10px] uppercase tracking-[0.2em] font-semibold">{hijriDate}</p>
+                <p className="mt-1 text-right text-xs font-semibold text-slate-700 dark:text-slate-100">{new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</p>
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-[1.5fr_1fr]">
-              <div className="rounded-[28px] border border-slate-200/80 bg-slate-950/95 p-5 text-white shadow-lg shadow-slate-950/10">
+            <div className="mt-6 grid gap-4 md:grid-cols-[1.4fr_1fr]">
+              <div className="rounded-[28px] border border-slate-200/80 bg-slate-950/95 p-3.5 sm:p-5 text-white shadow-lg shadow-slate-950/10">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{mosqueName}</p>
-                    <h2 className="mt-2 text-2xl font-black">{city}</h2>
+                    <p className="text-[10px] uppercase tracking-[0.24em] text-slate-400">{mosqueName}</p>
+                    <h2 className="mt-1 text-xl sm:text-2xl font-black">{city}</h2>
                   </div>
-                  <span className="rounded-2xl bg-slate-800/90 px-3 py-2 text-xs uppercase tracking-[0.22em] text-slate-300">Live</span>
+                  <span className="rounded-xl bg-slate-800/90 px-3 py-1.5 text-[10px] uppercase tracking-[0.22em] text-slate-300">Live</span>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between gap-3 rounded-[24px] bg-white/5 p-4 text-sm text-slate-200">
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white/5 p-3 sm:p-4 text-xs text-slate-200">
                   <div>
                     <p className="text-[9px] uppercase tracking-[0.28em] text-slate-400">Seats available</p>
-                    <p className="mt-1 text-lg font-black">{seatInfo.available}</p>
+                    <p className="mt-1 text-base font-black">{seatInfo.available}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[9px] uppercase tracking-[0.28em] text-slate-400">Capacity</p>
-                    <p className="mt-1 text-lg font-black">{seatInfo.capacity}</p>
+                    <p className="mt-1 text-base font-black">{seatInfo.capacity}</p>
                   </div>
                 </div>
 
-                <div className="mt-6 rounded-[28px] bg-white/5 p-5">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-emerald-300">Next prayer</p>
+                <div className="mt-5 rounded-2xl bg-white/5 p-4 sm:p-5">
+                  <p className="text-[10px] uppercase tracking-[0.28em] text-emerald-300">Next prayer</p>
                   {nextPrayer ? (
-                    <div className="mt-4 space-y-2">
-                      <div className="text-xl font-black tracking-tight text-white">{nextPrayer.name} {nextPrayer.type}</div>
-                      <div className="text-4xl font-black tracking-tight">{formatTimeRemaining(nextPrayer.secondsRemaining)}</div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Scheduled at {nextPrayer.time}</p>
+                    <div className="mt-3 space-y-1.5">
+                      <div className="text-lg font-black tracking-tight text-white">{nextPrayer.name} {nextPrayer.type}</div>
+                      <div className="text-3xl sm:text-4xl font-black tracking-tight">{formatTimeRemaining(nextPrayer.secondsRemaining)}</div>
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Scheduled at {nextPrayer.time}</p>
                     </div>
                   ) : (
-                    <p className="mt-4 text-sm text-slate-300">Prayer timetable not available yet.</p>
+                    <p className="mt-3 text-xs text-slate-350">Prayer timetable not available yet.</p>
                   )}
                 </div>
 
-                <div className="mt-6 grid gap-3">
-                  {prayerRows.map((item) => (
-                    <div key={item.name} className="rounded-3xl bg-slate-900/80 p-4">
-                      <div className="flex items-center justify-between gap-4">
+                <div className="mt-5 rounded-2xl bg-white/5 p-4 sm:p-5">
+                  <p className="text-[10px] uppercase tracking-[0.28em] text-slate-400 mb-3">Today Schedules</p>
+                  <div className="divide-y divide-white/10">
+                    {prayerRows.map((item) => (
+                      <div key={item.name} className="py-3 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
                         <div>
-                          <p className="text-sm font-semibold text-slate-200">{item.name}</p>
-                          <p className="text-xs text-slate-500">Adhan / Iqamah</p>
+                          <p className="text-sm font-semibold text-white">{item.name}</p>
+                          <p className="text-[10px] text-slate-500">Adhan / Iqamah</p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-black text-white">{item.time || '—'}</p>
-                          <p className="text-xs text-emerald-300">{item.iqamah || '—'}</p>
+                        <div className="text-right flex items-center gap-3">
+                          <div>
+                            <p className="text-[9px] text-slate-500 text-left uppercase">Adhan</p>
+                            <p className="text-sm font-black text-white">{item.time || '—'}</p>
+                          </div>
+                          <div className="border-l border-white/10 h-6"></div>
+                          <div>
+                            <p className="text-[9px] text-emerald-400 text-left uppercase font-bold">Iqamah</p>
+                            <p className="text-sm font-black text-emerald-300">{item.iqamah || '—'}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/95">
+                <div className="rounded-[28px] border border-slate-200/80 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/95">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Notification</p>
-                      <h3 className="mt-2 text-lg font-black">Stay informed</h3>
+                      <p className="text-[10px] uppercase tracking-[0.28em] text-slate-500">Notification</p>
+                      <h3 className="mt-1 text-base sm:text-lg font-black">Stay informed</h3>
                     </div>
-                    <div className="rounded-3xl bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-700">Mobile style</div>
+                    <div className="rounded-2xl bg-emerald-100 px-3 py-1.5 text-[10px] font-semibold text-emerald-700">Mobile style</div>
                   </div>
 
-                  <div className="mt-5 space-y-4">
+                  <div className="mt-4 divide-y divide-slate-100 dark:divide-slate-800/60">
                     {(
                       Object.keys(notifications) as Array<keyof typeof notifications>
                     ).map((key) => (
-                      <button
+                      <div
                         key={key}
-                        onClick={() => toggleNotification(key)}
-                        className="flex w-full items-center justify-between rounded-3xl border px-4 py-4 text-left transition hover:border-emerald-300/80"
-                        type="button"
+                        className="flex w-full items-center justify-between py-4 text-left first:pt-0 last:pb-0"
                       >
-                        <div>
-                          <p className="font-semibold text-slate-900 dark:text-slate-100">{key === 'prayerReminders' ? 'Prayer reminders' : key === 'announcementAlerts' ? 'Announcements' : 'Congregation updates'}</p>
-                          <p className="text-xs text-slate-500">{key === 'prayerReminders' ? 'Receive countdown and adhan alerts' : key === 'announcementAlerts' ? 'Get broadcast announcements' : 'Club updates and mosque notices'}</p>
+                        <div className="pr-4">
+                          <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">{key === 'prayerReminders' ? 'Prayer reminders' : key === 'announcementAlerts' ? 'Announcements' : 'Congregation updates'}</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{key === 'prayerReminders' ? 'Receive countdown and adhan alerts' : key === 'announcementAlerts' ? 'Get broadcast announcements' : 'Club updates and mosque notices'}</p>
                         </div>
-                        <div className={`h-6 w-11 rounded-full p-1 transition ${notifications[key] ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                        <button
+                          onClick={() => toggleNotification(key)}
+                          className={`h-6 w-11 shrink-0 rounded-full p-1 transition cursor-pointer ${notifications[key] ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+                          type="button"
+                        >
                           <div className={`h-4 w-4 rounded-full bg-white shadow-md transition ${notifications[key] ? 'translate-x-5' : 'translate-x-0'}`} />
-                        </div>
-                      </button>
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/95">
+                <div className="rounded-[28px] border border-slate-200/80 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/95">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Announcements</p>
-                      <h3 className="mt-2 text-lg font-black">Latest updates</h3>
+                      <p className="text-[10px] uppercase tracking-[0.28em] text-slate-500">Announcements</p>
+                      <h3 className="mt-1 text-base sm:text-lg font-black">Latest updates</h3>
                     </div>
                     <Link href="/dashboard/announcements" className="text-xs font-semibold text-emerald-600">View all</Link>
                   </div>
 
-                  <div className="mt-5 space-y-3">
+                  <div className="mt-4 divide-y divide-slate-100 dark:divide-slate-800/60">
                     {announcements.map((item) => (
-                      <div key={item.id} className="rounded-3xl bg-slate-100 p-4 dark:bg-slate-950/80">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.title}</p>
-                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.category} • {item.date}</p>
-                          </div>
+                      <div key={item.id} className="py-4 first:pt-0 last:pb-0">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.title}</p>
+                          <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">{item.category} • {item.date}</p>
                         </div>
-                        <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.description}</p>
+                        <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{item.description}</p>
                       </div>
                     ))}
                   </div>
@@ -262,30 +270,30 @@ export default function HomePage() {
             </div>
 
             {errorMessage ? (
-              <div className="mt-4 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-100">
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-100">
                 {errorMessage}
               </div>
             ) : null}
           </section>
 
           <section className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/95">
-              <h3 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Quick actions</h3>
-              <div className="mt-4 space-y-3">
-                <Link href="/login" className="block rounded-3xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-900 transition hover:border-emerald-500 dark:border-slate-800 dark:text-slate-100">Sign in as mosque admin</Link>
-                <Link href="/dashboard/settings" className="block rounded-3xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-900 transition hover:border-emerald-500 dark:border-slate-800 dark:text-slate-100">Manage mosque settings</Link>
+            <div className="rounded-[28px] border border-slate-200/80 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/95">
+              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Quick actions</h3>
+              <div className="mt-4 space-y-2">
+                <Link href="/login" className="block rounded-2xl border border-slate-200/60 px-4 py-3.5 text-xs font-semibold text-slate-900 transition hover:border-emerald-500 dark:border-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-850">Sign in as mosque admin</Link>
+                <Link href="/dashboard/settings" className="block rounded-2xl border border-slate-200/60 px-4 py-3.5 text-xs font-semibold text-slate-900 transition hover:border-emerald-500 dark:border-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-850">Manage mosque settings</Link>
               </div>
             </div>
-            <div className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/95">
-              <h3 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Community overview</h3>
-              <div className="mt-4 space-y-4">
-                <div className="flex items-center justify-between rounded-3xl bg-slate-100 p-4 dark:bg-slate-950/80">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">Small prayer hall status</p>
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">Open</span>
+            <div className="rounded-[28px] border border-slate-200/80 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/95">
+              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Community overview</h3>
+              <div className="mt-4 divide-y divide-slate-100 dark:divide-slate-800/60">
+                <div className="flex items-center justify-between py-3">
+                  <p className="text-xs font-semibold text-slate-900 dark:text-white">Small prayer hall status</p>
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700">Open</span>
                 </div>
-                <div className="flex items-center justify-between rounded-3xl bg-slate-100 p-4 dark:bg-slate-950/80">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">Notifications enabled</p>
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">{Object.values(notifications).filter(Boolean).length}/3</span>
+                <div className="flex items-center justify-between py-3">
+                  <p className="text-xs font-semibold text-slate-900 dark:text-white">Notifications enabled</p>
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700">{Object.values(notifications).filter(Boolean).length}/3</span>
                 </div>
               </div>
             </div>
